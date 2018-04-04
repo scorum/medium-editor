@@ -13,4 +13,6 @@ coverage/
 
 # IDE
 .idea/
+.vscode
+.history
 package-lock.json

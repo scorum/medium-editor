@@ -1,22 +1,8 @@
 {
-  "name": "medium-editor",
+  "name": "@scorum/medium-editor",
   "version": "5.23.3",
   "author": "Davi Ferreira <hi@daviferreira.com>",
-  "contributors": [
-    {
-      "name": "Nate Mielnik",
-      "email": "nathan@outlook.com"
-    },
-    {
-      "name": "Noah Chase",
-      "email": "nchase@gmail.com"
-    },
-    {
-      "name": "Jeremy Benoist",
-      "email": "jeremy.benoist@gmail.com"
-    }
-  ],
-  "description": "Medium.com WYSIWYG editor clone.",
+  "description": "Fork of Medium.com WYSIWYG editor clone.",
   "main": "dist/js/medium-editor.js",
   "repository": {
     "type": "git",
@@ -27,13 +13,7 @@
     "email": "hi@daviferreira.com"
   },
   "homepage": "http://yabwe.github.io/medium-editor/",
-  "keywords": [
-    "contenteditable",
-    "editor",
-    "medium",
-    "wysiwyg",
-    "rich-text"
-  ],
+  "keywords": [],
   "publishConfig": {
     "registry": "http://registry.npmjs.org/"
   },
