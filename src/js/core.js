@@ -166,6 +166,40 @@
         }
     }
 
+    /**
+     * Checks whether an editor block is empty and wraps it in tags
+     * @param node
+     * @private
+     */
+    function _processEmptyNode(node) {
+        // https://github.com/yabwe/medium-editor/issues/994
+        // Firefox thrown an error when calling `formatBlock` on an empty editable blockContainer that's not a <div>
+        if (MediumEditor.util.isMediumEditorElement(node)
+            && (node.children.length === 0 || (node.children.length === 1 && node.children[0].nodeName.toLowerCase() === 'br'))
+            && !MediumEditor.util.isBlockContainer(node))
+        {
+            this.options.ownerDocument.execCommand('formatBlock', false, 'p');
+        }
+    }
+
+    /**
+     * Handles editor keyDown event
+     * @param event
+     */
+    function handleKeydown(event) {
+        var node = MediumEditor.selection.getSelectionStart(this.options.ownerDocument);
+
+        if (!node) {
+            return;
+        }
+
+        _processEmptyNode.call(this, node);
+    }
+
+    /**
+     * Handles editor keyUp event
+     * @param event
+     */
     function handleKeyup(event) {
         var node = MediumEditor.selection.getSelectionStart(this.options.ownerDocument),
             tagName;
@@ -174,11 +208,7 @@
             return;
         }
 
-        // https://github.com/yabwe/medium-editor/issues/994
-        // Firefox thrown an error when calling `formatBlock` on an empty editable blockContainer that's not a <div>
-        if (MediumEditor.util.isMediumEditorElement(node) && node.children.length === 0 && !MediumEditor.util.isBlockContainer(node)) {
-            this.options.ownerDocument.execCommand('formatBlock', false, 'p');
-        }
+        _processEmptyNode.call(this, node);
 
         // https://github.com/yabwe/medium-editor/issues/834
         // https://github.com/yabwe/medium-editor/pull/382
@@ -432,6 +462,7 @@
             // if we're not disabling return, add a handler to help handle cleanup
             // for certain cases when enter is pressed
             if (!this.options.disableReturn && !element.getAttribute('data-disable-return')) {
+                this.on(element, 'keydown', handleKeydown.bind(this));
                 this.on(element, 'keyup', handleKeyup.bind(this));
             }
 

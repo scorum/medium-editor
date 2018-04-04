@@ -168,7 +168,7 @@ module.exports = function (grunt) {
         },
         build: {
             src: 'dist/js/medium-editor.js',
-            dest: 'dist/js/<%= pkg.name %>.min.js'
+            dest: 'dist/js/medium-editor.min.js'
         }
     };
 
@@ -270,11 +270,10 @@ module.exports = function (grunt) {
             stripBanners: true
         },
         dist: {
-            src: ['src/js/polyfills.js']
-                .concat(['src/wrappers/start.js'])
+            src: ['src/wrappers/start.js']
                 .concat(srcFiles)
                 .concat(['src/wrappers/end.js']),
-            dest: 'dist/js/<%= pkg.name %>.js',
+            dest: 'dist/js/medium-editor.js',
             nonull: true
         }
     };
