@@ -6352,7 +6352,7 @@ MediumEditor.extensions = {};
         // https://github.com/yabwe/medium-editor/issues/994
         // Firefox thrown an error when calling `formatBlock` on an empty editable blockContainer that's not a <div>
         if (MediumEditor.util.isMediumEditorElement(node)
-            && (node.children.length === 0 || (node.children.length === 1 && node.children[0].nodeName.toLowerCase() === 'br'))
+            && (node.textContent.length === 0)
             && !MediumEditor.util.isBlockContainer(node))
         {
             this.options.ownerDocument.execCommand('formatBlock', false, 'p');
