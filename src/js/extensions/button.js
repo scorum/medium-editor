@@ -85,6 +85,13 @@
          */
         attrs: undefined,
 
+        /**
+         * disableForAppliedActions: [Array]
+         * An array of buttons' actions which indicates whether the current one should be disabled
+         * when of one of them is already applied
+         */
+        disableForAppliedActions: undefined,
+
         // The button constructor can optionally accept the name of a built-in button
         // (ie 'bold', 'italic', etc.)
         // When the name of a button is passed, it will initialize itself with the

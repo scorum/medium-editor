@@ -2750,6 +2750,13 @@ MediumEditor.extensions = {};
          */
         attrs: undefined,
 
+        /**
+         * disableForAppliedActions: [Array]
+         * An array of buttons' actions which indicates whether the current one should be disabled
+         * when of one of them is already applied
+         */
+        disableForAppliedActions: undefined,
+
         // The button constructor can optionally accept the name of a built-in button
         // (ie 'bold', 'italic', etc.)
         // When the name of a button is passed, it will initialize itself with the
@@ -5881,6 +5888,38 @@ MediumEditor.extensions = {};
             this.checkActiveButtons();
         },
 
+        /**
+         * Checks whether button should be disabled when one of the buttons
+         * which are in one's `disableForAppliedActions` property (array of actions) is already applied
+         */
+        checkButtonsDisablingNecessity: function () {
+            var extensions = this.base.extensions;
+
+            extensions.forEach(function (commonExtension) {
+                var actions = commonExtension.disableForAppliedActions;
+
+                if (typeof actions !== 'undefined' && Array.isArray(actions)) {
+
+                    extensions.some(function (toolbarExtension) {
+                        if (actions.indexOf(toolbarExtension.action) !== -1
+                            && typeof toolbarExtension.isActive === 'function'
+                            && typeof toolbarExtension.setInactive === 'function')
+                        {
+                            if (toolbarExtension.isActive() === true) {
+                                commonExtension.setInactive();
+                                commonExtension.button.classList.add('medium-editor-button-disabled');
+                                commonExtension.button.setAttribute('disabled', 'disabled');
+                                return true;
+                            } else {
+                                commonExtension.button.classList.remove('medium-editor-button-disabled');
+                                commonExtension.button.removeAttribute('disabled');
+                            }
+                        }
+                    });
+                }
+            });
+        },
+
         checkActiveButtons: function () {
             var manualStateChecks = [],
                 queryState = null,
@@ -5939,6 +5978,8 @@ MediumEditor.extensions = {};
                 }
                 parentNode = parentNode.parentNode;
             }
+
+            this.checkButtonsDisablingNecessity();
         },
 
         // Positioning toolbar
