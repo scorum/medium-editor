@@ -5441,6 +5441,31 @@ MediumEditor.extensions = {};
 (function () {
     'use strict';
 
+    var Autolist = MediumEditor.Extension.extend({
+        name: 'autolist',
+        init: function () {
+            this.subscribe('editableInput', this.onInput.bind(this));
+        },
+        onInput: function () {
+            var listStart = this.base.getSelectedParentElement().textContent;
+            if (/1(\.|\))\s/.test(listStart)) {
+                this.base.execAction('delete');
+                this.base.execAction('delete');
+                this.base.execAction('delete');
+                this.base.execAction('insertorderedlist');
+            } else if (/(\*|-)\s/.test(listStart)) {
+                this.base.execAction('delete');
+                this.base.execAction('delete');
+                this.base.execAction('insertunorderedlist');
+            }
+        }
+    });
+
+    MediumEditor.extensions.autolist = Autolist;
+}());
+(function () {
+    'use strict';
+
     var Toolbar = MediumEditor.Extension.extend({
         name: 'toolbar',
 
@@ -6587,6 +6612,10 @@ MediumEditor.extensions = {};
         return this.options.placeholder !== false;
     }
 
+    function isAutolistEnabled() {
+        return this.options.autolist !== false;
+    }
+
     function isAutoLinkEnabled() {
         return this.options.autoLink !== false;
     }
@@ -6768,7 +6797,8 @@ MediumEditor.extensions = {};
             'anchor-preview': isAnchorPreviewEnabled.call(this),
             autoLink: isAutoLinkEnabled.call(this),
             keyboardCommands: isKeyboardCommandsEnabled.call(this),
-            placeholder: isPlaceholderEnabled.call(this)
+            placeholder: isPlaceholderEnabled.call(this),
+            autolist: isAutolistEnabled.call(this)
         };
         Object.keys(builtIns).forEach(function (name) {
             if (builtIns[name]) {
@@ -7105,6 +7135,9 @@ MediumEditor.extensions = {};
                     break;
                 case 'placeholder':
                     extension = new MediumEditor.extensions.placeholder(this.options.placeholder);
+                    break;
+                case 'autolist':
+                    extension = new MediumEditor.extensions.autolist(this.options.autolist);
                     break;
                 default:
                     // All of the built-in buttons for MediumEditor are extensions

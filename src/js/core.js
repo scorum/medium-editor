@@ -369,6 +369,10 @@
         return this.options.placeholder !== false;
     }
 
+    function isAutolistEnabled() {
+        return this.options.autolist !== false;
+    }
+
     function isAutoLinkEnabled() {
         return this.options.autoLink !== false;
     }
@@ -550,7 +554,8 @@
             'anchor-preview': isAnchorPreviewEnabled.call(this),
             autoLink: isAutoLinkEnabled.call(this),
             keyboardCommands: isKeyboardCommandsEnabled.call(this),
-            placeholder: isPlaceholderEnabled.call(this)
+            placeholder: isPlaceholderEnabled.call(this),
+            autolist: isAutolistEnabled.call(this)
         };
         Object.keys(builtIns).forEach(function (name) {
             if (builtIns[name]) {
@@ -887,6 +892,9 @@
                     break;
                 case 'placeholder':
                     extension = new MediumEditor.extensions.placeholder(this.options.placeholder);
+                    break;
+                case 'autolist':
+                    extension = new MediumEditor.extensions.autolist(this.options.autolist);
                     break;
                 default:
                     // All of the built-in buttons for MediumEditor are extensions

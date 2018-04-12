@@ -30,6 +30,7 @@ module.exports = function (grunt) {
             'src/js/extensions/fontsize.js',
             'src/js/extensions/paste.js',
             'src/js/extensions/placeholder.js',
+            'src/js/extensions/autolist.js',
             'src/js/extensions/toolbar.js',
             'src/js/extensions/deprecated/image-dragging.js',
             'src/js/core.js',
