@@ -6402,10 +6402,13 @@ MediumEditor.extensions = {};
                 isEmpty.test(node.innerHTML)) {
 
             // when cursor is in the first element, it's empty and user presses backspace,
-            // do delete action instead to get rid of the first element and move caret to 2nd
-            event.preventDefault();
-            MediumEditor.selection.moveCursor(this.options.ownerDocument, node.nextSibling);
-            node.parentElement.removeChild(node);
+            // create <p><br></p> block
+            p = this.options.ownerDocument.createElement('p');
+            p.innerHTML = '<br>';
+            node.parentElement.insertBefore(p, node.nextSibling);
+
+            // move the cursor into the new paragraph
+            MediumEditor.selection.moveCursor(this.options.ownerDocument, p);
         }
     }
 
