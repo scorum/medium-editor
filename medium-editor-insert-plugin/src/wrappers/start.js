@@ -1,7 +1,5 @@
 (function (factory) {
-    if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'handlebars/runtime', 'medium-editor', 'blueimp-file-upload', 'jquery-sortable'], factory);
-    } else if (typeof module === 'object' && module.exports) {
+    if (typeof module === 'object' && module.exports) {
         module.exports = function (jQuery) {
             if (typeof window === 'undefined') {
                 throw new Error("medium-editor-insert-plugin runs only in a browser.")
