@@ -20,7 +20,7 @@
             window.jQuery = jQuery;
 
             Handlebars = require('handlebars/runtime');
-            MediumEditor = require('medium-editor');
+            MediumEditor = require('../../../');
             require('jquery-sortable');
             require('blueimp-file-upload');
 
