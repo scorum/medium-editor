@@ -18,6 +18,10 @@
     "registry": "http://registry.npmjs.org/"
   },
   "license": "MIT",
+  "dependencies": {
+    "handlebars": "4.0.11",
+    "jquery-sortable": "0.9.13"
+  },
   "devDependencies": {
     "brfs": "1.4.2",
     "connect": "3.5.0",
