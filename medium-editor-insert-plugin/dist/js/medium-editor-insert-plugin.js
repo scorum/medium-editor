@@ -823,75 +823,77 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
 
 })(jQuery, window, document);
 
-; (function ($, window, document, undefined) {
+/**
+ * Gets common CommonEmbedsAddon Addon constructor
+ * @param pluginName
+ * @param addonName
+ * @param $ - `jQuery` object
+ * @param window - `window` object
+ * @param document - `document` object
+ */
+function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
+    pluginName = pluginName || 'mediumInsert';
 
-    'use strict';
-
-    /** Default values */
-    var pluginName = 'mediumInsert',
-        addonName = 'Embeds', // first char is uppercase
-        defaults = {
-            label: '<span class="fa fa-youtube-play"></span>',
-            placeholder: 'Paste a YouTube, Vimeo, Facebook, Twitter or Instagram link and press Enter',
-            oembedProxy: 'http://medium.iframe.ly/api/oembed?iframe=1',
-            captions: true,
-            captionPlaceholder: 'Type caption (optional)',
-            storeMeta: false,
-            styles: {
-                wide: {
-                    label: '<span class="fa fa-align-justify"></span>'
-                    // added: function ($el) {},
-                    // removed: function ($el) {}
-                },
-                left: {
-                    label: '<span class="fa fa-align-left"></span>'
-                    // added: function ($el) {},
-                    // removed: function ($el) {}
-                },
-                right: {
-                    label: '<span class="fa fa-align-right"></span>'
-                    // added: function ($el) {},
-                    // removed: function ($el) {}
-                }
+    var commonOptions = {
+        label: '<span></span>',
+        placeholder: 'Paste a link to embed content from another site (e.g. Twitter), and press Enter',
+        oembedProxy: 'http://medium.iframe.ly/api/oembed?iframe=1',
+        captions: true,
+        captionPlaceholder: 'Type caption (optional)',
+        storeMeta: false,
+        styles: {
+            wide: {
+                label: '<span class="fa fa-align-justify"></span>'
+                // added: function ($el) {},
+                // removed: function ($el) {}
             },
-            actions: {
-                remove: {
-                    label: '<span class="fa fa-times"></span>',
-                    clicked: function () {
-                        var $event = $.Event('keydown');
-
-                        $event.which = 8;
-                        $(document).trigger($event);
-                    }
-                }
+            left: {
+                label: '<span class="fa fa-align-left"></span>'
+                // added: function ($el) {},
+                // removed: function ($el) {}
             },
-            parseOnPaste: false
-        };
+            right: {
+                label: '<span class="fa fa-align-right"></span>'
+                // added: function ($el) {},
+                // removed: function ($el) {}
+            }
+        },
+        actions: {
+            remove: {
+                label: '<span class="fa fa-times"></span>',
+                clicked: function () {
+                    var $event = $.Event('keydown');
+
+                    $event.which = 8;
+                    $(document).trigger($event);
+                }
+            }
+        },
+        parseOnPaste: false
+    };
 
     /**
-     * Embeds object
+     * CommonEmbedsAddon object
      *
      * Sets options, variables and calls init() function
      *
      * @constructor
      * @param {DOM} el - DOM element to init the plugin on
-     * @param {object} options - Options to override defaults
+     * @param {object} options - Options to override common ones
      * @return {void}
      */
-
-    function Embeds(el, options) {
+    function CommonEmbedsAddon(el, options) {
         this.el = el;
         this.$el = $(el);
         this.templates = window.MediumInsert.Templates;
         this.core = this.$el.data('plugin_' + pluginName);
 
-        this.options = $.extend(true, {}, defaults, options);
+        this.options = $.extend(true, {}, commonOptions, options);
 
-        this._defaults = defaults;
         this._name = pluginName;
 
         // Extend editor's functions
-        if (this.core.getEditor()) {
+        if (this.core.getEditor() && !this.core.getEditor()._serializePreEmbeds) {
             this.core.getEditor()._serializePreEmbeds = this.core.getEditor().serialize;
             this.core.getEditor().serialize = this.editorSerialize;
         }
@@ -905,7 +907,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @return {void}
      */
 
-    Embeds.prototype.init = function () {
+    CommonEmbedsAddon.prototype.init = function () {
         var $embeds = this.$el.find('.medium-insert-embeds');
 
         $embeds.attr('contenteditable', false);
@@ -925,7 +927,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @return {void}
      */
 
-    Embeds.prototype.events = function () {
+    CommonEmbedsAddon.prototype.events = function () {
         $(document)
             .on('click', $.proxy(this, 'unselectEmbed'))
             .on('keydown', $.proxy(this, 'removeEmbed'))
@@ -953,7 +955,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @return {void}
      */
 
-    Embeds.prototype.backwardsCompatibility = function () {
+    CommonEmbedsAddon.prototype.backwardsCompatibility = function () {
         var that = this;
 
         this.$el.find('.mediumInsert-embeds')
@@ -976,7 +978,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @return {object} Serialized data
      */
 
-    Embeds.prototype.editorSerialize = function () {
+    CommonEmbedsAddon.prototype.editorSerialize = function () {
         var data = this._serializePreEmbeds();
 
         $.each(data, function (key) {
@@ -999,7 +1001,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @return {void}
      */
 
-    Embeds.prototype.add = function () {
+    CommonEmbedsAddon.prototype.add = function () {
         var $place = this.$el.find('.medium-insert-active');
 
         // Fix #132
@@ -1029,7 +1031,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @return {void}
      */
 
-    Embeds.prototype.togglePlaceholder = function (e) {
+    CommonEmbedsAddon.prototype.togglePlaceholder = function (e) {
         var $place = $(e.target),
             selection = window.getSelection(),
             range, $current, text;
@@ -1073,7 +1075,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @return {void}
      */
 
-    Embeds.prototype.fixRightClickOnPlaceholder = function (e) {
+    CommonEmbedsAddon.prototype.fixRightClickOnPlaceholder = function (e) {
         this.core.moveCaret($(e.target));
     };
 
@@ -1084,7 +1086,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @return {void}
      */
 
-    Embeds.prototype.processLink = function (e) {
+    CommonEmbedsAddon.prototype.processLink = function (e) {
         var $place = this.$el.find('.medium-insert-embeds-active'),
             url;
 
@@ -1119,7 +1121,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @return {void}
      */
 
-    Embeds.prototype.processPasted = function (e) {
+    CommonEmbedsAddon.prototype.processPasted = function (e) {
         var pastedUrl, linkRegEx;
         if ($(".medium-insert-embeds-active").length) {
             return;
@@ -1143,7 +1145,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @return {void}
      */
 
-    Embeds.prototype.oembed = function (url, pasted) {
+    CommonEmbedsAddon.prototype.oembed = function (url, pasted) {
         var that = this;
 
         $.support.cors = true;
@@ -1205,7 +1207,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @return {void}
      */
 
-    Embeds.prototype.parseUrl = function (url, pasted) {
+    CommonEmbedsAddon.prototype.parseUrl = function (url, pasted) {
         var html;
 
         if (!(new RegExp(['youtube', 'youtu.be', 'vimeo', 'instagram', 'twitter', 'facebook'].join('|')).test(url))) {
@@ -1244,7 +1246,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @return {void}
      */
 
-    Embeds.prototype.embed = function (html, pastedUrl) {
+    CommonEmbedsAddon.prototype.embed = function (html, pastedUrl) {
         var $place = this.$el.find('.medium-insert-embeds-active'),
             $div;
 
@@ -1302,7 +1304,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      *
      * @return {void}
      */
-    Embeds.prototype.convertBadEmbed = function (content) {
+    CommonEmbedsAddon.prototype.convertBadEmbed = function (content) {
         var $place, $empty, $content,
             emptyTemplate = this.templates['src/js/templates/core-empty-line.hbs']().trim();
 
@@ -1330,7 +1332,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @returns {void}
      */
 
-    Embeds.prototype.selectEmbed = function (e) {
+    CommonEmbedsAddon.prototype.selectEmbed = function (e) {
         var that = this,
             $embed;
         if (this.core.options.enabled) {
@@ -1355,7 +1357,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @returns {void}
      */
 
-    Embeds.prototype.unselectEmbed = function (e) {
+    CommonEmbedsAddon.prototype.unselectEmbed = function (e) {
         var $el = $(e.target).hasClass('medium-insert-embeds') ? $(e.target) : $(e.target).closest('.medium-insert-embeds'),
             $embed = this.$el.find('.medium-insert-embeds-selected');
 
@@ -1388,7 +1390,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @returns {void}
      */
 
-    Embeds.prototype.removeEmbed = function (e) {
+    CommonEmbedsAddon.prototype.removeEmbed = function (e) {
         var $embed, $empty;
 
         if (e.which === 8 || e.which === 46) {
@@ -1418,7 +1420,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @returns {void}
      */
 
-    Embeds.prototype.addToolbar = function () {
+    CommonEmbedsAddon.prototype.addToolbar = function () {
         var $embed = this.$el.find('.medium-insert-embeds-selected'),
             active = false,
             $toolbar, $toolbar2, mediumEditor, toolbarContainer;
@@ -1454,14 +1456,14 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
         $toolbar2.fadeIn();
     };
 
-    Embeds.prototype.autoRepositionToolbars = function () {
+    CommonEmbedsAddon.prototype.autoRepositionToolbars = function () {
         setTimeout(function () {
             this.repositionToolbars();
             this.repositionToolbars();
         }.bind(this), 0);
     };
 
-    Embeds.prototype.repositionToolbars = function () {
+    CommonEmbedsAddon.prototype.repositionToolbars = function () {
         var $toolbar = $('.medium-insert-embeds-toolbar'),
             $toolbar2 = $('.medium-insert-embeds-toolbar2'),
             $embed = this.$el.find('.medium-insert-embeds-selected'),
@@ -1512,7 +1514,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @returns {void}
      */
 
-    Embeds.prototype.toolbarAction = function (e) {
+    CommonEmbedsAddon.prototype.toolbarAction = function (e) {
         var $button = $(e.target).is('button') ? $(e.target) : $(e.target).closest('button'),
             $li = $button.closest('li'),
             $ul = $li.closest('ul'),
@@ -1551,7 +1553,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @returns {void}
      */
 
-    Embeds.prototype.toolbar2Action = function (e) {
+    CommonEmbedsAddon.prototype.toolbar2Action = function (e) {
         var $button = $(e.target).is('button') ? $(e.target) : $(e.target).closest('button'),
             callback = this.options.actions[$button.data('action')].clicked;
 
@@ -1561,6 +1563,35 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
 
         this.core.triggerInput();
     };
+
+    return CommonEmbedsAddon;
+}
+
+; (function ($, window, document, undefined) {
+
+    'use strict';
+
+    /** Default values */
+    var pluginName = 'mediumInsert',
+        addonName = 'Embeds'; // first char is uppercase
+
+    /**
+     * @constructor
+     */
+    var commonEmbedsAddon = getCommonEmbedsAddon(pluginName, addonName, $, window, document);
+
+    /**
+     * Embeds object
+     * @inheritDoc
+     */
+
+    function Embeds(el, options) {
+        commonEmbedsAddon.apply(this, arguments);
+    }
+
+    Embeds.prototype = Object.create(commonEmbedsAddon.prototype);
+    Embeds.prototype.constructor = Embeds;
+
 
     /** Plugin initialization */
 
@@ -1681,7 +1712,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             this.options.preview = false;
         }
 
-        // Extend editor's functions
+        // Учеутв увшещкэы агтсешщтыыукшфдшя
         if (this.core.getEditor()) {
             this.core.getEditor()._serializePreImages = this.core.getEditor().serialize;
             this.core.getEditor().serialize = this.editorSerialize;
@@ -2363,5 +2394,43 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
     };
 
 })(jQuery, window, document, MediumEditor.util);
+
+; (function ($, window, document, undefined) {
+
+    'use strict';
+
+    /** Default values */
+    var pluginName = 'mediumInsert',
+        addonName = 'Videos'; // first char is uppercase
+
+    /**
+     * @constructor
+     */
+    var commonEmbedsAddon = getCommonEmbedsAddon(pluginName, addonName, $, window, document);
+
+    /**
+     * Videos object
+     * @inheritDoc
+     */
+
+    function Videos(el, options) {
+        commonEmbedsAddon.apply(this, arguments);
+    }
+
+    Videos.prototype = Object.create(commonEmbedsAddon.prototype);
+    Videos.prototype.constructor = Videos;
+
+
+    /** Plugin initialization */
+
+    $.fn[pluginName + addonName] = function (options) {
+        return this.each(function () {
+            if (!$.data(this, 'plugin_' + pluginName + addonName)) {
+                $.data(this, 'plugin_' + pluginName + addonName, new Videos(this, options));
+            }
+        });
+    };
+
+})(jQuery, window, document);
 
 }));
