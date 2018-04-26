@@ -105,7 +105,7 @@
             this.options.preview = false;
         }
 
-        // Учеутв увшещкэы агтсешщтыыукшфдшя
+        // Extend editor's functions
         if (this.core.getEditor()) {
             this.core.getEditor()._serializePreImages = this.core.getEditor().serialize;
             this.core.getEditor().serialize = this.editorSerialize;
