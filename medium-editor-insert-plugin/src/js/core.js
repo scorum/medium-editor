@@ -7,6 +7,7 @@
         defaults = {
             editor: null,
             enabled: true,
+            showButtonLabel: '<span>+</span>',
             addons: {
                 images: true, // boolean or object containing configuration
                 videos: true,
@@ -353,7 +354,8 @@
         }
 
         return this.templates['src/js/templates/core-buttons.hbs']({
-            addons: this.options.addons
+            addons: this.options.addons,
+            showButtonLabel: this.options.showButtonLabel,
         }).trim();
     };
 
