@@ -430,6 +430,8 @@
 
         this.core.triggerInput();
 
+        $('.medium-insert-images.medium-insert-active').find('img').trigger('click');
+
         return data.context;
     };
 
