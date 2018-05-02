@@ -403,7 +403,7 @@
 
         this.clean();
 
-        if ($el.hasClass('medium-editor-placeholder') === false && $el.closest('.medium-insert-buttons').length === 0 && $current.closest('.medium-insert-buttons').length === 0) {
+        if ($el.closest('.medium-insert-buttons').length === 0 && $current.closest('.medium-insert-buttons').length === 0) {
 
             this.$el.find('.medium-insert-active').removeClass('medium-insert-active');
 
@@ -449,12 +449,11 @@
     Core.prototype.showButtons = function (activeAddon) {
         var $buttons = this.$el.find('.medium-insert-buttons');
 
-        $buttons.show();
-        $buttons.find('li').show();
-
-        if (activeAddon) {
-            $buttons.find('li').hide();
-            $buttons.find('button[data-addon="' + activeAddon + '"]').parent().show();
+        if (activeAddon !== 'images') {
+            $buttons.show();
+            $buttons.find('li').show();
+        } else {
+            this.hideButtons();
         }
     };
 
@@ -489,23 +488,16 @@
             position = {};
 
         if ($p.length) {
-            position.left = $p.position().left;
             position.top = $p.position().top;
 
             if (activeAddon) {
-                position.left += $p.width() - $buttons.find('.medium-insert-buttons-show').width() - 10;
-                position.top += $p.height() - 20 + ($lastCaption.length ? -$lastCaption.height() - parseInt($lastCaption.css('margin-top'), 10) : 10);
+               position.top += $p.height() - 20 + ($lastCaption.length ? -$lastCaption.height() - parseInt($lastCaption.css('margin-top'), 10) : 10);
             } else {
-                position.left += -parseInt($buttons.find('.medium-insert-buttons-addons').css('left'), 10) - parseInt($buttons.find('.medium-insert-buttons-addons button:first').css('margin-left'), 10);
-                position.top += parseInt($p.css('margin-top'), 10);
+               position.top += parseInt($p.css('margin-top'), 10);
             }
 
             if (elementsContainerAbsolute) {
                 position.top += elementsContainer.scrollTop;
-            }
-
-            if (this.$el.hasClass('medium-editor-placeholder') === false && position.left < 0) {
-                position.left = $p.position().left;
             }
 
             $buttons.css(position);

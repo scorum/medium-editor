@@ -458,6 +458,8 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
                 $place.remove();
             }
 
+            $('.medium-insert-embeds-added').find('.medium-insert-embeds-overlay').trigger('click');
+            $('.medium-insert-embeds-added').removeClass('medium-insert-embeds-added');
 
             this.core.triggerInput();
 

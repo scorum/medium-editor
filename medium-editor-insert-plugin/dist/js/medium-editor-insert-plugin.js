@@ -100,7 +100,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/embeds-toolbar.hbs"] = Handl
 this["MediumInsert"]["Templates"]["src/js/templates/embeds-wrapper.hbs"] = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1, helper;
 
-  return "<div class=\"medium-insert-embeds\" contenteditable=\"false\">\n	<figure>\n		<div class=\"medium-insert-embed\">\n			"
+  return "<div class=\"medium-insert-embeds medium-insert-embeds-added\" contenteditable=\"false\">\n	<figure>\n		<div class=\"medium-insert-embed\">\n			"
     + ((stack1 = ((helper = (helper = helpers.html || (depth0 != null ? depth0.html : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : (container.nullContext || {}),{"name":"html","hash":{},"data":data}) : helper))) != null ? stack1 : "")
     + "\n		</div>\n	</figure>\n	<div class=\"medium-insert-embeds-overlay\"></div>\n</div>";
 },"useData":true});
@@ -568,7 +568,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
 
         this.clean();
 
-        if ($el.hasClass('medium-editor-placeholder') === false && $el.closest('.medium-insert-buttons').length === 0 && $current.closest('.medium-insert-buttons').length === 0) {
+        if ($el.closest('.medium-insert-buttons').length === 0 && $current.closest('.medium-insert-buttons').length === 0) {
 
             this.$el.find('.medium-insert-active').removeClass('medium-insert-active');
 
@@ -614,12 +614,11 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
     Core.prototype.showButtons = function (activeAddon) {
         var $buttons = this.$el.find('.medium-insert-buttons');
 
-        $buttons.show();
-        $buttons.find('li').show();
-
-        if (activeAddon) {
-            $buttons.find('li').hide();
-            $buttons.find('button[data-addon="' + activeAddon + '"]').parent().show();
+        if (activeAddon !== 'images') {
+            $buttons.show();
+            $buttons.find('li').show();
+        } else {
+            this.hideButtons();
         }
     };
 
@@ -654,23 +653,16 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             position = {};
 
         if ($p.length) {
-            position.left = $p.position().left;
             position.top = $p.position().top;
 
             if (activeAddon) {
-                position.left += $p.width() - $buttons.find('.medium-insert-buttons-show').width() - 10;
-                position.top += $p.height() - 20 + ($lastCaption.length ? -$lastCaption.height() - parseInt($lastCaption.css('margin-top'), 10) : 10);
+               position.top += $p.height() - 20 + ($lastCaption.length ? -$lastCaption.height() - parseInt($lastCaption.css('margin-top'), 10) : 10);
             } else {
-                position.left += -parseInt($buttons.find('.medium-insert-buttons-addons').css('left'), 10) - parseInt($buttons.find('.medium-insert-buttons-addons button:first').css('margin-left'), 10);
-                position.top += parseInt($p.css('margin-top'), 10);
+               position.top += parseInt($p.css('margin-top'), 10);
             }
 
             if (elementsContainerAbsolute) {
                 position.top += elementsContainer.scrollTop;
-            }
-
-            if (this.$el.hasClass('medium-editor-placeholder') === false && position.left < 0) {
-                position.left = $p.position().left;
             }
 
             $buttons.css(position);
@@ -1288,6 +1280,8 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
                 $place.remove();
             }
 
+            $('.medium-insert-embeds-added').find('.medium-insert-embeds-overlay').trigger('click');
+            $('.medium-insert-embeds-added').removeClass('medium-insert-embeds-added');
 
             this.core.triggerInput();
 
@@ -2041,6 +2035,8 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         }
 
         this.core.triggerInput();
+
+        $('.medium-insert-images.medium-insert-active').find('img').trigger('click');
 
         return data.context;
     };
