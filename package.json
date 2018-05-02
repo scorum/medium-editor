@@ -1,6 +1,6 @@
 {
   "name": "@scorum/medium-editor",
-  "version": "5.23.14",
+  "version": "5.23.15",
   "author": "Davi Ferreira <hi@daviferreira.com>",
   "description": "Fork of Medium.com WYSIWYG editor clone.",
   "main": "dist/js/medium-editor.js",
