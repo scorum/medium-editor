@@ -86,6 +86,9 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         var $embeds = this.$el.find('.medium-insert-embeds');
 
         $embeds.attr('contenteditable', false);
+        $embeds.find('figcaption').attr('contenteditable', true);
+        $embeds.find('figure').attr('contenteditable', false);
+
         $embeds.each(function () {
             if ($(this).find('.medium-insert-embeds-overlay').length === 0) {
                 $(this).append($('<div />').addClass('medium-insert-embeds-overlay'));
