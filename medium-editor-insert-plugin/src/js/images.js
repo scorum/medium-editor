@@ -123,6 +123,7 @@
     Images.prototype.init = function () {
         var $images = this.$el.find('.medium-insert-images');
 
+        $images.attr('contenteditable', false);
         $images.find('figcaption').attr('contenteditable', true);
         $images.find('figure').attr('contenteditable', false);
 
