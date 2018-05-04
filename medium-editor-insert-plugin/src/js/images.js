@@ -9,17 +9,17 @@
         addonName = 'Images', // first char is uppercase
         defaults = {
             label: '<span class="fa fa-camera"></span>',
-            deleteMethod: 'POST',
-            deleteScript: 'delete.php',
-            preview: true,
+            deleteCustomCallback: function () {},
+            fileDeleteOptions: {},
+            //uploadError: function($el, data) {}
+            //uploadCompleted: function ($el, data) {}
+            //uploadCustomCallback: function () {},
+            uploadData: {},
+            acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i,
+            maxFileSize: 1024 * 1024, //bytes
             captions: true,
             captionPlaceholder: 'Type caption for image (optional)',
             autoGrid: 3,
-            fileUploadOptions: { // See https://github.com/blueimp/jQuery-File-Upload/wiki/Options
-                url: null,
-                acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i
-            },
-            fileDeleteOptions: {},
             styles: {
                 wide: {
                     label: '<span class="fa fa-align-justify"></span>'
@@ -99,11 +99,6 @@
 
         this._defaults = defaults;
         this._name = pluginName;
-
-        // Allow image preview only in browsers, that support's that
-        if (this.options.preview && !window.FileReader) {
-            this.options.preview = false;
-        }
 
         // Extend editor's functions
         if (this.core.getEditor()) {
@@ -197,52 +192,27 @@
 
     Images.prototype.add = function () {
         var that = this,
-            $file = $(this.templates['src/js/templates/images-fileupload.hbs']()),
-            fileUploadOptions = {
-                dataType: 'json',
-                add: function (e, data) {
-                    $.proxy(that, 'uploadAdd', e, data)();
-                },
-                done: function (e, data) {
-                    $.proxy(that, 'uploadDone', e, data)();
-                }
-            };
+            $file = $(this.templates['src/js/templates/images-fileupload.hbs']());
 
-        // Only add progress callbacks for browsers that support XHR2,
-        // and test for XHR2 per:
-        // http://stackoverflow.com/questions/6767887/
-        // what-is-the-best-way-to-check-for-xhr2-file-upload-support
-        if (new XMLHttpRequest().upload) {
-            fileUploadOptions.progress = function (e, data) {
-                $.proxy(that, 'uploadProgress', e, data)();
-            };
-
-            fileUploadOptions.progressall = function (e, data) {
-                $.proxy(that, 'uploadProgressall', e, data)();
-            };
-        }
-
-        $file.fileupload($.extend(true, {}, this.options.fileUploadOptions, fileUploadOptions));
+        $file.change(function() {
+            $.proxy(that, 'uploadAdd', this)();
+        });
 
         $file.click();
     };
 
     /**
-     * Callback invoked as soon as files are added to the fileupload widget - via file input selection, drag & drop or add API call.
-     * https://github.com/blueimp/jQuery-File-Upload/wiki/Options#add
-     *
-     * @param {Event} e
      * @param {object} data
      * @return {void}
      */
 
-    Images.prototype.uploadAdd = function (e, data) {
+    Images.prototype.uploadAdd = function (data) {
         var $place = this.$el.find('.medium-insert-active'),
             that = this,
             uploadErrors = [],
             file = data.files[0],
-            acceptFileTypes = this.options.fileUploadOptions.acceptFileTypes,
-            maxFileSize = this.options.fileUploadOptions.maxFileSize,
+            acceptFileTypes = this.options.acceptFileTypes,
+            maxFileSize = this.options.maxFileSize,
             reader;
 
         if (acceptFileTypes && !acceptFileTypes.test(file.type)) {
@@ -251,8 +221,8 @@
             uploadErrors.push(this.options.messages.maxFileSizeError + file.name);
         }
         if (uploadErrors.length > 0) {
-            if (this.options.uploadFailed && typeof this.options.uploadFailed === "function") {
-                this.options.uploadFailed(uploadErrors, data);
+            if (this.options.errorCustomCallback && typeof this.options.errorCustomCallback === "function") {
+                this.options.errorCustomCallback(uploadErrors, data);
 
                 return;
             }
@@ -278,26 +248,13 @@
 
         $place.addClass('medium-insert-images');
 
-        if (this.options.preview === false && $place.find('progress').length === 0 && (new XMLHttpRequest().upload)) {
-            $place.append(this.templates['src/js/templates/images-progressbar.hbs']());
-        }
+        reader = new FileReader();
 
-        if (data.autoUpload || (data.autoUpload !== false && $(e.target).fileupload('option', 'autoUpload'))) {
-            data.process().done(function () {
-                // If preview is set to true, let the showImage handle the upload start
-                if (that.options.preview) {
-                    reader = new FileReader();
+        reader.onload = function (e) {
+            $.proxy(that, 'showImage', e.target.result, data)();
+        };
 
-                    reader.onload = function (e) {
-                        $.proxy(that, 'showImage', e.target.result, data)();
-                    };
-
-                    reader.readAsDataURL(data.files[0]);
-                } else {
-                    data.submit();
-                }
-            });
-        }
+        reader.readAsDataURL(data.files[0]);
     };
 
     /**
@@ -309,7 +266,7 @@
      * @return {void}
      */
 
-    Images.prototype.uploadProgressall = function (e, data) {
+    /*Images.prototype.uploadProgressall = function (e, data) {
         var progress, $progressbar;
 
         if (this.options.preview === false) {
@@ -324,7 +281,7 @@
                 $progressbar.remove();
             }
         }
-    };
+    };*/
 
     /**
      * Callback for upload progress events.
@@ -335,7 +292,7 @@
      * @return {void}
      */
 
-    Images.prototype.uploadProgress = function (e, data) {
+    /*Images.prototype.uploadProgress = function (e, data) {
         var progress, $progressbar;
 
         if (this.options.preview) {
@@ -348,19 +305,17 @@
                 $progressbar.remove();
             }
         }
-    };
+    };*/
 
     /**
-     * Callback for successful upload requests.
-     * https://github.com/blueimp/jQuery-File-Upload/wiki/Options#done
      *
      * @param {Event} e
      * @param {object} data
      * @return {void}
      */
 
-    Images.prototype.uploadDone = function (e, data) {
-        $.proxy(this, 'showImage', data.result.files[0].url, data)();
+    Images.prototype.uploadDone = function (url, data) {
+        $.proxy(this, 'showImage', url, data)();
 
         this.core.clean();
         this.sorting();
@@ -381,10 +336,12 @@
         // Hide editor's placeholder
         $place.click();
 
+        console.log(data.context);
+
         // If preview is allowed and preview image already exists,
         // replace it with uploaded image
         that = this;
-        if (this.options.preview && data.context) {
+        if (data.context) {
             domImage = this.getDOMImage();
             domImage.onload = function () {
                 data.context.find('img').attr('src', img);
@@ -394,12 +351,15 @@
                 }
 
                 that.core.triggerInput();
+
+                $('.medium-insert-images.medium-insert-active').find('img').click();
+                $('.medium-insert-images.medium-insert-active').find('.medium-insert-images-progress').remove();
             }.bind(this);
             domImage.src = img;
         } else {
             data.context = $(this.templates['src/js/templates/images-image.hbs']({
                 img: img,
-                progress: this.options.preview
+                progress: true
             })).appendTo($place);
 
             $place.find('br').remove();
@@ -422,16 +382,16 @@
                 }
             }
 
-            if (this.options.preview) {
-                data.submit();
-            } else if (this.options.uploadCompleted) {
+            //
+            this.uploadDone('https://thenypost.files.wordpress.com/2018/02/man-eaten-by-lions.jpg?quality=90&strip=all', data);
+            //
+
+            if (this.options.uploadCompleted) {
                 this.options.uploadCompleted(data.context, data);
             }
         }
 
-        this.core.triggerInput();
-
-        $('.medium-insert-images.medium-insert-active').find('img').trigger('click');
+        //that.core.triggerInput();
 
         return data.context;
     };
@@ -529,7 +489,7 @@
                 // Is backspace pressed and caret is at the beginning of a paragraph, get previous element
                 if (e.which === 8 && caretPosition === 0) {
                     $sibling = $current.prev();
-                // Is del pressed and caret is at the end of a paragraph, get next element
+                    // Is del pressed and caret is at the end of a paragraph, get next element
                 } else if (e.which === 46 && caretPosition === $current.text().length) {
                     $sibling = $current.next();
                 }
@@ -591,7 +551,7 @@
             // try to run it as a callback
             if (typeof this.options.deleteScript === 'function') {
                 this.options.deleteScript(file, $el);
-            // otherwise, it's probably a string, call it as ajax
+                // otherwise, it's probably a string, call it as ajax
             } else {
                 $.ajax($.extend(true, {}, {
                     url: this.options.deleteScript,
