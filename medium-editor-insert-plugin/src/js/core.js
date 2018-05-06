@@ -630,6 +630,21 @@
         }
     };
 
+    /**
+     * Async delay helper
+     *
+     * @param {number} time
+     * @return {Promise}
+     */
+
+    Core.prototype._delayAsync = function(time = 1) {
+        return new Promise(function(resolve) {
+            setTimeout(function() {
+                resolve();
+            }, time)
+        });
+    };
+
     /** Plugin initialization */
 
     $.fn[pluginName] = function (options) {

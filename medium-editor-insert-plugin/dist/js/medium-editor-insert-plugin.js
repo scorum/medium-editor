@@ -795,6 +795,21 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
         }
     };
 
+    /**
+     * Async delay helper
+     *
+     * @param {number} time
+     * @return {Promise}
+     */
+
+    Core.prototype._delayAsync = function(time = 1) {
+        return new Promise(function(resolve) {
+            setTimeout(function() {
+                resolve();
+            }, time)
+        });
+    };
+
     /** Plugin initialization */
 
     $.fn[pluginName] = function (options) {
@@ -1620,10 +1635,12 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             label: '<span class="fa fa-camera"></span>',
             deleteCustomCallback: function () {},
             fileDeleteOptions: {},
-            //uploadError: function($el, data) {}
-            //uploadCompleted: function ($el, data) {}
-            //uploadCustomCallback: function () {},
+            // uploadCompleted: function () {},
+            uploadCustomCallback: function () {},
             uploadData: {},
+            // errorCustomCallback: function () {},
+            cryptoCustomCallback: function () {},
+            getUploadedImageCustomCallback: function () {},
             acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i,
             maxFileSize: 1024 * 1024, //bytes
             captions: true,
@@ -1681,9 +1698,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             messages: {
                 acceptFileTypesError: 'This file is not in a supported format: ',
                 maxFileSizeError: 'This file is too big: '
-            }
-            // uploadError: function($el, data) {}
-            // uploadCompleted: function ($el, data) {}
+            },
         };
 
     /**
@@ -1818,27 +1833,31 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
     Images.prototype.uploadAdd = function (data) {
         var $place = this.$el.find('.medium-insert-active'),
             that = this,
-            uploadErrors = [],
+            uploadErrors = false,
+            uploadErrorMessage = '',
             file = data.files[0],
             acceptFileTypes = this.options.acceptFileTypes,
             maxFileSize = this.options.maxFileSize,
             reader;
 
         if (acceptFileTypes && !acceptFileTypes.test(file.type)) {
-            uploadErrors.push(this.options.messages.acceptFileTypesError + file.name);
+            uploadErrors = true;
+            uploadErrorMessage = this.options.messages.acceptFileTypesError;
         } else if (maxFileSize && file.size > maxFileSize) {
-            uploadErrors.push(this.options.messages.maxFileSizeError + file.name);
+            uploadErrors = true;
+            uploadErrorMessage = this.options.messages.maxFileSizeError;
         }
-        if (uploadErrors.length > 0) {
-            if (this.options.errorCustomCallback && typeof this.options.errorCustomCallback === "function") {
-                this.options.errorCustomCallback(uploadErrors, data);
 
-                return;
+        if (uploadErrors) {
+            if (this.options.errorCustomCallback && typeof this.options.errorCustomCallback === "function") {
+                this.options.errorCustomCallback(uploadErrorMessage);
+
+                return false;
             }
 
-            alert(uploadErrors.join("\n"));
+            console.log('Upload errors (' + uploadErrorMessage + ')');
 
-            return;
+            return false;
         }
 
         this.core.hideButtons();
@@ -1918,13 +1937,23 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
 
     /**
      *
-     * @param {Event} e
+     * @param {string} imgUrl
      * @param {object} data
      * @return {void}
      */
 
-    Images.prototype.uploadDone = function (url, data) {
-        $.proxy(this, 'showImage', url, data)();
+    Images.prototype.uploadDone = function (imgUrl, data) {
+        var domImage = this.getDOMImage();
+        var $imgEl = $('.medium-insert-images.medium-insert-active').find('img');
+        domImage.onload = function () {
+            $imgEl.attr('src', imgUrl);
+
+            this.core.triggerInput();
+
+            $imgEl.click();
+            $imgEl.next('.medium-insert-images-progress').remove();
+        }.bind(this);
+        domImage.src = imgUrl;
 
         this.core.clean();
         this.sorting();
@@ -1938,71 +1967,66 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
      */
 
     Images.prototype.showImage = function (img, data) {
-        var $place = this.$el.find('.medium-insert-active'),
-            domImage,
-            that;
+        var $place = this.$el.find('.medium-insert-active');
 
         // Hide editor's placeholder
         $place.click();
 
-        console.log(data.context);
+        var $mediaEl = $(this.templates['src/js/templates/images-image.hbs']({
+            img: img,
+            progress: true
+        }));
 
-        // If preview is allowed and preview image already exists,
-        // replace it with uploaded image
-        that = this;
-        if (data.context) {
-            domImage = this.getDOMImage();
-            domImage.onload = function () {
-                data.context.find('img').attr('src', img);
+        $mediaEl.appendTo($place);
 
-                if (this.options.uploadCompleted) {
-                    this.options.uploadCompleted(data.context, data);
-                }
+        $place.find('br').remove();
 
-                that.core.triggerInput();
+        $('.medium-editor-insert-plugin').blur();
+        $('.medium-insert-images.medium-insert-active').find('.medium-insert-images-progress').focus().click();
 
-                $('.medium-insert-images.medium-insert-active').find('img').click();
-                $('.medium-insert-images.medium-insert-active').find('.medium-insert-images-progress').remove();
-            }.bind(this);
-            domImage.src = img;
-        } else {
-            data.context = $(this.templates['src/js/templates/images-image.hbs']({
-                img: img,
-                progress: true
-            })).appendTo($place);
+        this.core.triggerInput();
 
-            $place.find('br').remove();
+        var uploadMedia = this.options.uploadCustomCallback;
+        var getMedia = this.options.getUploadedImageCustomCallback;
+        var base64Img = img.split(',')[1];
+        var imgType = data.files[0].type;
+        var imgId = Date.now() + 'abc'; // !!!!!!!!!!!!!!!
+        var accountName = this.options.uploadData.account;
+        var accountPrivateKey = this.options.uploadData.privateKey;
 
-            if (this.options.autoGrid && $place.find('figure').length >= this.options.autoGrid) {
-                $.each(this.options.styles, function (style, options) {
-                    var className = 'medium-insert-images-' + style;
+        (async () => {
+            try {
 
-                    $place.removeClass(className);
+                await this.core._delayAsync();
 
-                    if (options.removed) {
-                        options.removed($place);
+                var uploadResponse = await uploadMedia(
+                    accountPrivateKey,
+                    accountName,
+                    imgId,
+                    base64Img,
+                    imgType,
+                );
+
+                console.log(uploadResponse);
+
+                try {
+                    const uploadedImgUrl = await getMedia(accountName, imgId);
+
+                    console.log(uploadedImgUrl);
+
+                    this.uploadDone(uploadedImgUrl, data);
+
+                    if (this.options.uploadCompleted) {
+                        this.options.uploadCompleted(data);
                     }
-                });
 
-                $place.addClass('medium-insert-images-grid');
-
-                if (this.options.styles.grid.added) {
-                    this.options.styles.grid.added($place);
+                } catch (err) {
+                    console.error(err);
                 }
+            } catch (err) {
+                console.error(err);
             }
-
-            //
-            this.uploadDone('https://thenypost.files.wordpress.com/2018/02/man-eaten-by-lions.jpg?quality=90&strip=all', data);
-            //
-
-            if (this.options.uploadCompleted) {
-                this.options.uploadCompleted(data.context, data);
-            }
-        }
-
-        //that.core.triggerInput();
-
-        return data.context;
+        })();
     };
 
     Images.prototype.getDOMImage = function () {
@@ -2359,7 +2383,6 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
     };
 
 })(jQuery, window, document, MediumEditor.util);
-
 ; (function ($, window, document, undefined) {
 
     'use strict';
