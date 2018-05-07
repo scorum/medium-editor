@@ -22,7 +22,6 @@
             Handlebars = require('handlebars/runtime');
             MediumEditor = require('../../../');
             require('jquery-sortable');
-            require('blueimp-file-upload');
 
             factory(jQuery, Handlebars, MediumEditor);
             return jQuery;
@@ -2020,9 +2019,6 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
                 );
 
                 const uploadedImgUrl = await getMedia(accountName, imgId);
-
-                console.log(uploadResponse);
-                console.log(uploadedImgUrl);
 
                 this.uploadDone(uploadedImgUrl, data);
 

@@ -397,9 +397,6 @@
 
                 const uploadedImgUrl = await getMedia(accountName, imgId);
 
-                console.log(uploadResponse);
-                console.log(uploadedImgUrl);
-
                 this.uploadDone(uploadedImgUrl, data);
 
                 if (this.options.uploadCompleted) {
