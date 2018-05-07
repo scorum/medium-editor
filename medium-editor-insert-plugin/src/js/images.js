@@ -9,17 +9,19 @@
         addonName = 'Images', // first char is uppercase
         defaults = {
             label: '<span class="fa fa-camera"></span>',
-            deleteMethod: 'POST',
-            deleteScript: 'delete.php',
-            preview: true,
+            deleteCustomCallback: function () {},
+            fileDeleteOptions: {},
+            // uploadCompleted: function () {},
+            uploadCustomCallback: function () {},
+            uploadData: {},
+            // errorCustomCallback: function () {},
+            generateMediaUniqueIdCallback: function () {},
+            getUploadedImageCustomCallback: function () {},
+            acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i,
+            maxFileSize: 1024 * 1024, //bytes
             captions: true,
             captionPlaceholder: 'Type caption for image (optional)',
             autoGrid: 3,
-            fileUploadOptions: { // See https://github.com/blueimp/jQuery-File-Upload/wiki/Options
-                url: null,
-                acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i
-            },
-            fileDeleteOptions: {},
             styles: {
                 wide: {
                     label: '<span class="fa fa-align-justify"></span>'
@@ -71,10 +73,9 @@
             },
             messages: {
                 acceptFileTypesError: 'This file is not in a supported format: ',
-                maxFileSizeError: 'This file is too big: '
-            }
-            // uploadError: function($el, data) {}
-            // uploadCompleted: function ($el, data) {}
+                maxFileSizeError: 'This file is too big: ',
+                uploadError: 'An error occurred while uploading image'
+            },
         };
 
     /**
@@ -99,11 +100,6 @@
 
         this._defaults = defaults;
         this._name = pluginName;
-
-        // Allow image preview only in browsers, that support's that
-        if (this.options.preview && !window.FileReader) {
-            this.options.preview = false;
-        }
 
         // Extend editor's functions
         if (this.core.getEditor()) {
@@ -197,69 +193,48 @@
 
     Images.prototype.add = function () {
         var that = this,
-            $file = $(this.templates['src/js/templates/images-fileupload.hbs']()),
-            fileUploadOptions = {
-                dataType: 'json',
-                add: function (e, data) {
-                    $.proxy(that, 'uploadAdd', e, data)();
-                },
-                done: function (e, data) {
-                    $.proxy(that, 'uploadDone', e, data)();
-                }
-            };
+            $file = $(this.templates['src/js/templates/images-fileupload.hbs']());
 
-        // Only add progress callbacks for browsers that support XHR2,
-        // and test for XHR2 per:
-        // http://stackoverflow.com/questions/6767887/
-        // what-is-the-best-way-to-check-for-xhr2-file-upload-support
-        if (new XMLHttpRequest().upload) {
-            fileUploadOptions.progress = function (e, data) {
-                $.proxy(that, 'uploadProgress', e, data)();
-            };
-
-            fileUploadOptions.progressall = function (e, data) {
-                $.proxy(that, 'uploadProgressall', e, data)();
-            };
-        }
-
-        $file.fileupload($.extend(true, {}, this.options.fileUploadOptions, fileUploadOptions));
+        $file.change(function() {
+            $.proxy(that, 'uploadAdd', this)();
+        });
 
         $file.click();
     };
 
     /**
-     * Callback invoked as soon as files are added to the fileupload widget - via file input selection, drag & drop or add API call.
-     * https://github.com/blueimp/jQuery-File-Upload/wiki/Options#add
-     *
-     * @param {Event} e
      * @param {object} data
-     * @return {void}
      */
 
-    Images.prototype.uploadAdd = function (e, data) {
+    Images.prototype.uploadAdd = function (data) {
         var $place = this.$el.find('.medium-insert-active'),
             that = this,
-            uploadErrors = [],
+            uploadErrors = false,
+            uploadErrorMessage = '',
             file = data.files[0],
-            acceptFileTypes = this.options.fileUploadOptions.acceptFileTypes,
-            maxFileSize = this.options.fileUploadOptions.maxFileSize,
-            reader;
+            acceptFileTypes = this.options.acceptFileTypes,
+            maxFileSize = this.options.maxFileSize,
+            reader,
+            mediaId = this.options.generateMediaUniqueIdCallback();
 
         if (acceptFileTypes && !acceptFileTypes.test(file.type)) {
-            uploadErrors.push(this.options.messages.acceptFileTypesError + file.name);
+            uploadErrors = true;
+            uploadErrorMessage = this.options.messages.acceptFileTypesError;
         } else if (maxFileSize && file.size > maxFileSize) {
-            uploadErrors.push(this.options.messages.maxFileSizeError + file.name);
+            uploadErrors = true;
+            uploadErrorMessage = this.options.messages.maxFileSizeError;
         }
-        if (uploadErrors.length > 0) {
-            if (this.options.uploadFailed && typeof this.options.uploadFailed === "function") {
-                this.options.uploadFailed(uploadErrors, data);
 
-                return;
+        if (uploadErrors) {
+            if (this.options.errorCustomCallback && typeof this.options.errorCustomCallback === "function") {
+                this.options.errorCustomCallback(uploadErrorMessage);
+
+                return false;
             }
 
-            alert(uploadErrors.join("\n"));
+            console.log('Upload errors (' + uploadErrorMessage + ')');
 
-            return;
+            return false;
         }
 
         this.core.hideButtons();
@@ -276,28 +251,18 @@
             }
         }
 
+        data.mediaId = mediaId;
+
         $place.addClass('medium-insert-images');
+        $place.attr('data-media-id', mediaId);
 
-        if (this.options.preview === false && $place.find('progress').length === 0 && (new XMLHttpRequest().upload)) {
-            $place.append(this.templates['src/js/templates/images-progressbar.hbs']());
-        }
+        reader = new FileReader();
 
-        if (data.autoUpload || (data.autoUpload !== false && $(e.target).fileupload('option', 'autoUpload'))) {
-            data.process().done(function () {
-                // If preview is set to true, let the showImage handle the upload start
-                if (that.options.preview) {
-                    reader = new FileReader();
+        reader.onload = function (e) {
+            $.proxy(that, 'showImage', e.target.result, data)();
+        };
 
-                    reader.onload = function (e) {
-                        $.proxy(that, 'showImage', e.target.result, data)();
-                    };
-
-                    reader.readAsDataURL(data.files[0]);
-                } else {
-                    data.submit();
-                }
-            });
-        }
+        reader.readAsDataURL(data.files[0]);
     };
 
     /**
@@ -309,7 +274,7 @@
      * @return {void}
      */
 
-    Images.prototype.uploadProgressall = function (e, data) {
+    /*Images.prototype.uploadProgressall = function (e, data) {
         var progress, $progressbar;
 
         if (this.options.preview === false) {
@@ -324,7 +289,7 @@
                 $progressbar.remove();
             }
         }
-    };
+    };*/
 
     /**
      * Callback for upload progress events.
@@ -335,7 +300,7 @@
      * @return {void}
      */
 
-    Images.prototype.uploadProgress = function (e, data) {
+    /*Images.prototype.uploadProgress = function (e, data) {
         var progress, $progressbar;
 
         if (this.options.preview) {
@@ -348,92 +313,106 @@
                 $progressbar.remove();
             }
         }
-    };
+    };*/
 
     /**
-     * Callback for successful upload requests.
-     * https://github.com/blueimp/jQuery-File-Upload/wiki/Options#done
      *
-     * @param {Event} e
+     * @param {string} imgUrl
      * @param {object} data
      * @return {void}
      */
 
-    Images.prototype.uploadDone = function (e, data) {
-        $.proxy(this, 'showImage', data.result.files[0].url, data)();
+    Images.prototype.uploadDone = function (imgUrl, data) {
+        var domImage = this.getDOMImage();
+        var imgId = data.mediaId;
+        var $imgEl = $('.medium-insert-images[data-media-id="' + imgId + '"]').find('img');
+
+        domImage.onload = function () {
+            $imgEl.attr('src', imgUrl);
+
+            this.core.triggerInput();
+
+            $imgEl.next('.medium-insert-images-progress').remove();
+            $imgEl.click();
+        }.bind(this);
+
+        domImage.src = imgUrl;
 
         this.core.clean();
-        this.sorting();
+        //this.sorting();
     };
 
     /**
      * Add uploaded / preview image to DOM
      *
      * @param {string} img
+     * @param {object} data
      * @returns {void}
      */
 
     Images.prototype.showImage = function (img, data) {
-        var $place = this.$el.find('.medium-insert-active'),
-            domImage,
-            that;
+        var uploadMedia = this.options.uploadCustomCallback;
+        var getMedia = this.options.getUploadedImageCustomCallback;
+        var base64Img = img.split(',')[1];
+        var imgType = data.files[0].type;
+        var imgId = data.mediaId;
+        var accountName = this.options.uploadData.account;
+        var accountPrivateKey = this.options.uploadData.privateKey;
+        var uploadErrorMessage =this.options.messages.uploadError;
+        var $place = this.$el.find('.medium-insert-images.medium-insert-active');
 
         // Hide editor's placeholder
         $place.click();
 
-        // If preview is allowed and preview image already exists,
-        // replace it with uploaded image
-        that = this;
-        if (this.options.preview && data.context) {
-            domImage = this.getDOMImage();
-            domImage.onload = function () {
-                data.context.find('img').attr('src', img);
+        var $mediaEl = $(this.templates['src/js/templates/images-image.hbs']({
+            img: img,
+            progress: true
+        }));
 
-                if (this.options.uploadCompleted) {
-                    this.options.uploadCompleted(data.context, data);
-                }
-
-                that.core.triggerInput();
-            }.bind(this);
-            domImage.src = img;
-        } else {
-            data.context = $(this.templates['src/js/templates/images-image.hbs']({
-                img: img,
-                progress: this.options.preview
-            })).appendTo($place);
-
-            $place.find('br').remove();
-
-            if (this.options.autoGrid && $place.find('figure').length >= this.options.autoGrid) {
-                $.each(this.options.styles, function (style, options) {
-                    var className = 'medium-insert-images-' + style;
-
-                    $place.removeClass(className);
-
-                    if (options.removed) {
-                        options.removed($place);
-                    }
-                });
-
-                $place.addClass('medium-insert-images-grid');
-
-                if (this.options.styles.grid.added) {
-                    this.options.styles.grid.added($place);
-                }
-            }
-
-            if (this.options.preview) {
-                data.submit();
-            } else if (this.options.uploadCompleted) {
-                this.options.uploadCompleted(data.context, data);
-            }
-        }
+        $mediaEl.appendTo($place);
 
         this.core.triggerInput();
 
-        $('.medium-insert-images.medium-insert-active').find('img').trigger('click');
+        $place.find('br').remove();
 
-        return data.context;
+        // Blur shouldn't be done in Safari because of "selection getRangeAt(0)" bug
+        if (!(/Version\/([0-9\._]+).*Safari/.test(navigator.userAgent))) {
+            $('.medium-editor-insert-plugin').blur();
+        }
+
+        $('.medium-insert-images[data-media-id="' + imgId + '"]').find('img')
+            .next('.medium-insert-images-progress').focus().click();
+
+        (async () => {
+            try {
+                await this.core._delayAsync();
+
+                var uploadResponse = await uploadMedia(
+                    accountPrivateKey,
+                    accountName,
+                    imgId,
+                    base64Img,
+                    imgType,
+                );
+
+                const uploadedImgUrl = await getMedia(accountName, imgId);
+
+                this.uploadDone(uploadedImgUrl, data);
+
+                if (this.options.uploadCompleted) {
+                    this.options.uploadCompleted(data);
+                }
+
+            } catch (err) {
+                console.error(err);
+
+                if (this.options.errorCustomCallback && typeof this.options.errorCustomCallback === "function") {
+                    this.options.errorCustomCallback(uploadErrorMessage);
+
+                    return false;
+                }
+            }
+        })();
     };
 
     Images.prototype.getDOMImage = function () {
@@ -529,7 +508,7 @@
                 // Is backspace pressed and caret is at the beginning of a paragraph, get previous element
                 if (e.which === 8 && caretPosition === 0) {
                     $sibling = $current.prev();
-                // Is del pressed and caret is at the end of a paragraph, get next element
+                    // Is del pressed and caret is at the end of a paragraph, get next element
                 } else if (e.which === 46 && caretPosition === $current.text().length) {
                     $sibling = $current.next();
                 }
@@ -591,7 +570,7 @@
             // try to run it as a callback
             if (typeof this.options.deleteScript === 'function') {
                 this.options.deleteScript(file, $el);
-            // otherwise, it's probably a string, call it as ajax
+                // otherwise, it's probably a string, call it as ajax
             } else {
                 $.ajax($.extend(true, {}, {
                     url: this.options.deleteScript,
