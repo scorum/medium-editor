@@ -1639,7 +1639,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             uploadCustomCallback: function () {},
             uploadData: {},
             // errorCustomCallback: function () {},
-            cryptoCustomCallback: function () {},
+            generateMediaUniqueIdCallback: function () {},
             getUploadedImageCustomCallback: function () {},
             acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i,
             maxFileSize: 1024 * 1024, //bytes
@@ -1697,7 +1697,8 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             },
             messages: {
                 acceptFileTypesError: 'This file is not in a supported format: ',
-                maxFileSizeError: 'This file is too big: '
+                maxFileSizeError: 'This file is too big: ',
+                uploadError: 'An error occurred while uploading image'
             },
         };
 
@@ -1827,7 +1828,6 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
 
     /**
      * @param {object} data
-     * @return {void}
      */
 
     Images.prototype.uploadAdd = function (data) {
@@ -1838,7 +1838,8 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             file = data.files[0],
             acceptFileTypes = this.options.acceptFileTypes,
             maxFileSize = this.options.maxFileSize,
-            reader;
+            reader,
+            mediaId = this.options.generateMediaUniqueIdCallback();
 
         if (acceptFileTypes && !acceptFileTypes.test(file.type)) {
             uploadErrors = true;
@@ -1874,7 +1875,10 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             }
         }
 
+        data.mediaId = mediaId;
+
         $place.addClass('medium-insert-images');
+        $place.attr('data-media-id', mediaId);
 
         reader = new FileReader();
 
@@ -1944,30 +1948,42 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
 
     Images.prototype.uploadDone = function (imgUrl, data) {
         var domImage = this.getDOMImage();
-        var $imgEl = $('.medium-insert-images.medium-insert-active').find('img');
+        var imgId = data.mediaId;
+        var $imgEl = $('.medium-insert-images[data-media-id="' + imgId + '"]').find('img');
+
         domImage.onload = function () {
             $imgEl.attr('src', imgUrl);
 
             this.core.triggerInput();
 
-            $imgEl.click();
             $imgEl.next('.medium-insert-images-progress').remove();
+            $imgEl.click();
         }.bind(this);
+
         domImage.src = imgUrl;
 
         this.core.clean();
-        this.sorting();
+        //this.sorting();
     };
 
     /**
      * Add uploaded / preview image to DOM
      *
      * @param {string} img
+     * @param {object} data
      * @returns {void}
      */
 
     Images.prototype.showImage = function (img, data) {
-        var $place = this.$el.find('.medium-insert-active');
+        var uploadMedia = this.options.uploadCustomCallback;
+        var getMedia = this.options.getUploadedImageCustomCallback;
+        var base64Img = img.split(',')[1];
+        var imgType = data.files[0].type;
+        var imgId = data.mediaId;
+        var accountName = this.options.uploadData.account;
+        var accountPrivateKey = this.options.uploadData.privateKey;
+        var uploadErrorMessage =this.options.messages.uploadError;
+        var $place = this.$el.find('.medium-insert-images.medium-insert-active');
 
         // Hide editor's placeholder
         $place.click();
@@ -1979,24 +1995,20 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
 
         $mediaEl.appendTo($place);
 
-        $place.find('br').remove();
-
-        $('.medium-editor-insert-plugin').blur();
-        $('.medium-insert-images.medium-insert-active').find('.medium-insert-images-progress').focus().click();
-
         this.core.triggerInput();
 
-        var uploadMedia = this.options.uploadCustomCallback;
-        var getMedia = this.options.getUploadedImageCustomCallback;
-        var base64Img = img.split(',')[1];
-        var imgType = data.files[0].type;
-        var imgId = Date.now() + 'abc'; // !!!!!!!!!!!!!!!
-        var accountName = this.options.uploadData.account;
-        var accountPrivateKey = this.options.uploadData.privateKey;
+        $place.find('br').remove();
+
+        // Blur shouldn't be done in Safari because of "selection getRangeAt(0)" bug
+        if (!(/Version\/([0-9\._]+).*Safari/.test(navigator.userAgent))) {
+            $('.medium-editor-insert-plugin').blur();
+        }
+
+        $('.medium-insert-images[data-media-id="' + imgId + '"]').find('img')
+            .next('.medium-insert-images-progress').focus().click();
 
         (async () => {
             try {
-
                 await this.core._delayAsync();
 
                 var uploadResponse = await uploadMedia(
@@ -2007,24 +2019,25 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
                     imgType,
                 );
 
+                const uploadedImgUrl = await getMedia(accountName, imgId);
+
                 console.log(uploadResponse);
+                console.log(uploadedImgUrl);
 
-                try {
-                    const uploadedImgUrl = await getMedia(accountName, imgId);
+                this.uploadDone(uploadedImgUrl, data);
 
-                    console.log(uploadedImgUrl);
-
-                    this.uploadDone(uploadedImgUrl, data);
-
-                    if (this.options.uploadCompleted) {
-                        this.options.uploadCompleted(data);
-                    }
-
-                } catch (err) {
-                    console.error(err);
+                if (this.options.uploadCompleted) {
+                    this.options.uploadCompleted(data);
                 }
+
             } catch (err) {
                 console.error(err);
+
+                if (this.options.errorCustomCallback && typeof this.options.errorCustomCallback === "function") {
+                    this.options.errorCustomCallback(uploadErrorMessage);
+
+                    return false;
+                }
             }
         })();
     };
