@@ -1953,10 +1953,13 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         domImage.onload = function () {
             $imgEl.attr('src', imgUrl);
 
+            $imgEl.next('.medium-insert-images-progress').remove();
+
             this.core.triggerInput();
 
-            $imgEl.next('.medium-insert-images-progress').remove();
-            $imgEl.click();
+            if ($('.medium-editor-insert-plugin').find('.medium-insert-images-progress').length === 0) {
+                $imgEl.click();
+            }
         }.bind(this);
 
         domImage.src = imgUrl;
@@ -2055,6 +2058,10 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
 
         if (this.core.options.enabled) {
             $image = $(e.target);
+
+            if ($image.hasClass('medium-insert-image-active')) {
+                return false;
+            }
 
             this.$currentImage = $image;
 
