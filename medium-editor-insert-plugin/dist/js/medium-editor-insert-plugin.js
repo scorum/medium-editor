@@ -849,6 +849,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         label: '<span></span>',
         placeholder: 'Paste a link to embed content from another site (e.g. Twitter), and press Enter',
         oembedProxy: 'http://medium.iframe.ly/api/oembed?iframe=1',
+        allowedDomains: [],
         captions: true,
         captionPlaceholder: 'Type caption (optional)',
         storeMeta: false,
@@ -1164,6 +1165,17 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
 
         $.support.cors = true;
 
+        var allowedDomains = this.options.allowedDomains;
+
+        if (allowedDomains && allowedDomains.length !== 0) {
+            var regExpStr = '^(http(s)?:\\/\\/)?(www\\.)?(' + (allowedDomains.join('|') + ')');
+
+            if (!(new RegExp(regExpStr).test(url))) {
+                $.proxy(this, 'convertBadEmbed', url)();
+                return false;
+            }
+        }
+
         $.ajax({
             crossDomain: true,
             cache: false,
@@ -1330,7 +1342,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         $content = $(emptyTemplate);
         $place.before($content);
         $place.remove();
-        $content.html(content);
+        $content.text(content);
 
         // add an new empty node right after to simulate Enter press
         $empty = $(emptyTemplate);
@@ -1582,7 +1594,6 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
 
     return CommonEmbedsAddon;
 }
-
 ; (function ($, window, document, undefined) {
 
     'use strict';
