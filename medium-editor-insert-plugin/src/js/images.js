@@ -9,6 +9,7 @@
         addonName = 'Images', // first char is uppercase
         defaults = {
             label: '<span class="fa fa-camera"></span>',
+            tooltipTitle: '',
             deleteCustomCallback: function () {},
             fileDeleteOptions: {},
             // uploadCompleted: function () {},

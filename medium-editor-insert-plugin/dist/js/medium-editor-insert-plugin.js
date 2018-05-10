@@ -35,11 +35,13 @@ this["MediumInsert"] = this["MediumInsert"] || {};
 this["MediumInsert"]["Templates"] = this["MediumInsert"]["Templates"] || {};
 
 this["MediumInsert"]["Templates"]["src/js/templates/core-buttons.hbs"] = Handlebars.template({"1":function(container,depth0,helpers,partials,data) {
-    var stack1, helper, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=helpers.helperMissing, alias3="function";
+    var stack1, helper, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
 
   return "            <li><button data-addon=\""
-    + container.escapeExpression(((helper = (helper = helpers.key || (data && data.key)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"key","hash":{},"data":data}) : helper)))
-    + "\" data-action=\"add\" class=\"medium-insert-action\" type=\"button\">"
+    + alias4(((helper = (helper = helpers.key || (data && data.key)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"key","hash":{},"data":data}) : helper)))
+    + "\" data-action=\"add\" class=\"medium-insert-action\" type=\"button\" title=\""
+    + alias4(((helper = (helper = helpers.tooltipTitle || (depth0 != null ? depth0.tooltipTitle : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"tooltipTitle","hash":{},"data":data}) : helper)))
+    + "\">"
     + ((stack1 = ((helper = (helper = helpers.label || (depth0 != null ? depth0.label : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"label","hash":{},"data":data}) : helper))) != null ? stack1 : "")
     + "</button></li>\n";
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
@@ -847,6 +849,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
 
     var commonOptions = {
         label: '<span></span>',
+        tooltipTitle: '',
         placeholder: 'Paste a link to embed content from another site (e.g. Twitter), and press Enter',
         oembedProxy: 'http://medium.iframe.ly/api/oembed?iframe=1',
         allowedDomains: [],
@@ -1643,6 +1646,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         addonName = 'Images', // first char is uppercase
         defaults = {
             label: '<span class="fa fa-camera"></span>',
+            tooltipTitle: '',
             deleteCustomCallback: function () {},
             fileDeleteOptions: {},
             // uploadCompleted: function () {},

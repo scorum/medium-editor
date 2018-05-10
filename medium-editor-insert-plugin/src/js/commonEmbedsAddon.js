@@ -11,6 +11,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
 
     var commonOptions = {
         label: '<span></span>',
+        tooltipTitle: '',
         placeholder: 'Paste a link to embed content from another site (e.g. Twitter), and press Enter',
         oembedProxy: 'http://medium.iframe.ly/api/oembed?iframe=1',
         allowedDomains: [],
