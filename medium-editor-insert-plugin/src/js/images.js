@@ -193,14 +193,22 @@
      */
 
     Images.prototype.add = function () {
-        var that = this,
-            $file = $(this.templates['src/js/templates/images-fileupload.hbs']());
+        var that = this;
+        var $file = $('<input/>')
+            .attr('type', 'file')
+            .attr('name', 'upload-new-image')
+            .attr('accept', 'image/*')
+            .attr('id', 'upload-new-image');
 
-        $file.change(function() {
-            $.proxy(that, 'uploadAdd', this)();
+        $file.on('change', function() {
+            that.uploadAdd(this);
         });
 
-        $file.click();
+        (async() => {
+            await this.core._delayAsync();
+            $file.click();
+        })();
+
     };
 
     /**
