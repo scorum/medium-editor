@@ -99,11 +99,13 @@ this["MediumInsert"]["Templates"]["src/js/templates/embeds-toolbar.hbs"] = Handl
 },"useData":true});
 
 this["MediumInsert"]["Templates"]["src/js/templates/embeds-wrapper.hbs"] = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
-    var stack1, helper;
+    var stack1, helper, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=helpers.helperMissing, alias3="function";
 
-  return "<div class=\"medium-insert-embeds medium-insert-embeds-added\" contenteditable=\"false\">\n	<figure>\n		<div class=\"medium-insert-embed\">\n			"
-    + ((stack1 = ((helper = (helper = helpers.html || (depth0 != null ? depth0.html : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : (container.nullContext || {}),{"name":"html","hash":{},"data":data}) : helper))) != null ? stack1 : "")
-    + "\n		</div>\n	</figure>\n	<div class=\"medium-insert-embeds-overlay\"></div>\n</div>";
+  return "<div class=\"medium-insert-embeds medium-insert-embeds-added\" contenteditable=\"false\">\n	<figure>\n		<div class=\"medium-insert-embed\">\n            <div class=\"medium-insert-embed-inner\">\n			    "
+    + ((stack1 = ((helper = (helper = helpers.html || (depth0 != null ? depth0.html : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"html","hash":{},"data":data}) : helper))) != null ? stack1 : "")
+    + "\n            </div>\n            <a href=\""
+    + container.escapeExpression(((helper = (helper = helpers.url || (depth0 != null ? depth0.url : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"url","hash":{},"data":data}) : helper)))
+    + "\" data-embedded-object></a>\n		</div>\n	</figure>\n	<div class=\"medium-insert-embeds-overlay\"></div>\n</div>";
 },"useData":true});
 
 this["MediumInsert"]["Templates"]["src/js/templates/images-fileupload.hbs"] = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
@@ -958,11 +960,6 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             .on('click', '.medium-insert-embeds-overlay', $.proxy(this, 'selectEmbed'))
             .on('contextmenu', '.medium-insert-embeds-placeholder', $.proxy(this, 'fixRightClickOnPlaceholder'));
 
-        if (this.options.parseOnPaste) {
-            this.$el
-                .on('paste', $.proxy(this, 'processPasted'));
-        }
-
         $(window)
             .on('resize', $.proxy(this, 'autoRepositionToolbars'));
     };
@@ -1006,6 +1003,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             $embeds.removeAttr('contenteditable');
             $embeds.find('figcaption').removeAttr('contenteditable');
             $data.find('.medium-insert-embeds-overlay').remove();
+            $embeds.find('.medium-insert-embed-inner').remove();
 
             data[key].value = $data.html();
         });
@@ -1133,30 +1131,6 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
     };
 
     /**
-     * Process Pasted
-     *
-     * @param {Event} e
-     * @return {void}
-     */
-
-    CommonEmbedsAddon.prototype.processPasted = function (e) {
-        var pastedUrl, linkRegEx;
-        if ($(".medium-insert-embeds-active").length) {
-            return;
-        }
-
-        pastedUrl = e.originalEvent.clipboardData.getData('text');
-        linkRegEx = new RegExp('^(http(s?):)?\/\/','i');
-        if (linkRegEx.test(pastedUrl)) {
-            if (this.options.oembedProxy) {
-                this.oembed(pastedUrl, true);
-            } else {
-                this.parseUrl(pastedUrl, true);
-            }
-        }
-    };
-
-    /**
      * Get HTML via oEmbed proxy
      *
      * @param {string} url
@@ -1204,11 +1178,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
                     return;
                 }
 
-                if (pasted) {
-                    $.proxy(that, 'embed', html, url)();
-                } else {
-                    $.proxy(that, 'embed', html)();
-                }
+                $.proxy(that, 'embed', html, url)();
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 var responseJSON = (function () {
@@ -1283,34 +1253,12 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             alert('Incorrect URL format specified');
             return false;
         } else {
-            if (html.indexOf('</script>') > -1) {
-                // Store embed code with <script> tag inside wrapper attribute value.
-                // Make nice attribute value escaping using jQuery.
-                $div = $('<div>')
-                    .attr('data-embed-code', $('<div />').text(html).html())
-                    .html(html);
-                html = $('<div>').append($div).html();
-            }
 
-            if (pastedUrl) {
-                // Get the element with the pasted url
-                // place the embed template and remove the pasted text
-                $place = this.$el.find(":not(iframe, script, style)")
-                    .contents().filter(
-                        function () {
-                            return this.nodeType === 3 && this.textContent.indexOf(pastedUrl) > -1;
-                        }).parent();
-
-                $place.after(this.templates['src/js/templates/embeds-wrapper.hbs']({
-                    html: html
-                }));
-                $place.text($place.text().replace(pastedUrl, ''));
-            } else {
-                $place.after(this.templates['src/js/templates/embeds-wrapper.hbs']({
-                    html: html
-                }));
-                $place.remove();
-            }
+            $place.after(this.templates['src/js/templates/embeds-wrapper.hbs']({
+                html: html,
+                url: pastedUrl
+            }));
+            $place.remove();
 
             $('.medium-insert-embeds-added').find('.medium-insert-embeds-overlay').trigger('click');
             $('.medium-insert-embeds-added').removeClass('medium-insert-embeds-added');
