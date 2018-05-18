@@ -101,11 +101,11 @@ this["MediumInsert"]["Templates"]["src/js/templates/embeds-toolbar.hbs"] = Handl
 this["MediumInsert"]["Templates"]["src/js/templates/embeds-wrapper.hbs"] = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1, helper, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=helpers.helperMissing, alias3="function";
 
-  return "<div class=\"medium-insert-embeds medium-insert-embeds-added\" contenteditable=\"false\">\n	<figure>\n		<div class=\"medium-insert-embed\">\n            <div class=\"medium-insert-embed-inner\">\n			    "
-    + ((stack1 = ((helper = (helper = helpers.html || (depth0 != null ? depth0.html : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"html","hash":{},"data":data}) : helper))) != null ? stack1 : "")
-    + "\n            </div>\n            <a href=\""
+  return "<div class=\"medium-insert-embeds medium-insert-embeds-added\" contenteditable=\"false\">\n	<figure>\n        <div class=\"medium-insert-embed\" data-embedded-object-src=\""
     + container.escapeExpression(((helper = (helper = helpers.url || (depth0 != null ? depth0.url : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"url","hash":{},"data":data}) : helper)))
-    + "\" data-embedded-object></a>\n		</div>\n	</figure>\n	<div class=\"medium-insert-embeds-overlay\"></div>\n</div>";
+    + "\">\n            "
+    + ((stack1 = ((helper = (helper = helpers.html || (depth0 != null ? depth0.html : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"html","hash":{},"data":data}) : helper))) != null ? stack1 : "")
+    + "\n        </div>\n	</figure>\n	<div class=\"medium-insert-embeds-overlay\"></div>\n</div>";
 },"useData":true});
 
 this["MediumInsert"]["Templates"]["src/js/templates/images-fileupload.hbs"] = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
@@ -1003,7 +1003,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             $embeds.removeAttr('contenteditable');
             $embeds.find('figcaption').removeAttr('contenteditable');
             $data.find('.medium-insert-embeds-overlay').remove();
-            $embeds.find('.medium-insert-embed-inner').remove();
+            $embeds.find('.medium-insert-embed').empty();
 
             data[key].value = $data.html();
         });
