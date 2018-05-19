@@ -18,6 +18,7 @@
             // errorCustomCallback: function () {},
             generateMediaUniqueIdCallback: function () {},
             getUploadedImageCustomCallback: function () {},
+            imageDefaultSize: 800,
             acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i,
             maxFileSize: 1024 * 1024, //bytes
             captions: true,
@@ -98,6 +99,7 @@
         this.core = this.$el.data('plugin_' + pluginName);
 
         this.options = $.extend(true, {}, defaults, options);
+        this.imageAvailableSizesList = this.getImageAvailableSizesList();
 
         this._defaults = defaults;
         this._name = pluginName;
@@ -326,18 +328,30 @@
 
     /**
      *
-     * @param {string} imgUrl
-     * @param {object} data
+     * @param {string} uploadedImgData
+     * @param {string} imgId
      * @return {void}
      */
 
-    Images.prototype.uploadDone = function (imgUrl, data) {
+    Images.prototype.uploadDone = function (uploadedImgData, imgId) {
         var domImage = this.getDOMImage();
-        var imgId = data.mediaId;
-        var $imgEl = $('.medium-insert-images[data-media-id="' + imgId + '"]').find('img');
+        var { url: imgUrl, meta: { width: originalWidth, height: originalHeight } } = uploadedImgData;
+        var $imgWrapper = $('.medium-insert-images[data-media-id="' + imgId + '"]');
+        var $imgEl = $imgWrapper.find('img');
+        var imageDefaultSize = this.options.imageDefaultSize;
+
+        var imgSuitableSize = this.getImageSuitableSize(originalWidth, imageDefaultSize, this.imageAvailableSizesList)
+        if (imgSuitableSize) {
+            imgUrl = `${imgUrl}_${imgSuitableSize}`;
+        }
 
         domImage.onload = function () {
             $imgEl.attr('src', imgUrl);
+
+            $imgWrapper.attr({
+                'data-original-width': originalWidth,
+                'data-original-height': originalHeight,
+            });
 
             $imgEl.next('.medium-insert-images-progress').remove();
 
@@ -407,15 +421,18 @@
                     imgType,
                 );
 
-                const uploadedImgUrl = await getMedia(accountName, imgId);
+                const uploadedImgData = await getMedia(accountName, imgId);
 
-                this.uploadDone(uploadedImgUrl, data);
+                this.uploadDone(uploadedImgData, imgId);
 
                 if (this.options.uploadCompleted) {
                     this.options.uploadCompleted(data);
                 }
 
             } catch (err) {
+                $('.medium-insert-images[data-media-id="' + imgId + '"]').remove();
+                this.core.triggerInput();
+
                 console.error(err);
 
                 if (this.options.errorCustomCallback && typeof this.options.errorCustomCallback === "function") {
@@ -477,6 +494,10 @@
     Images.prototype.unselectImage = function (e) {
         var $el = $(e.target),
             $image = this.$el.find('.medium-insert-image-active');
+
+        if ($el.closest('.medium-editor-action').length !== 0) {
+            return false;
+        }
 
         if ($el.is('img') && $el.hasClass('medium-insert-image-active')) {
             $image.not($el).removeClass('medium-insert-image-active');
@@ -700,12 +721,13 @@
 
     Images.prototype.toolbarAction = function (e) {
         var that = this,
-            $button, $li, $ul, $lis, $p;
+            $button, $li, $ul, $lis, $p, $currentImage;
 
         if (this.$currentImage === null) {
             return;
         }
 
+        $currentImage = this.$currentImage;
         $button = $(e.target).is('button') ? $(e.target) : $(e.target).closest('button');
         $li = $button.closest('li');
         $ul = $li.closest('ul');
@@ -715,27 +737,52 @@
         $button.addClass('medium-editor-button-active');
         $li.siblings().find('.medium-editor-button-active').removeClass('medium-editor-button-active');
 
-        $lis.find('button').each(function () {
-            var className = 'medium-insert-images-' + $(this).data('action');
+        var domImage = this.getDOMImage();
+        var imgUrl = $currentImage.attr('src');
+        var imgOriginalSize = $p.attr('data-original-width');
+        var imgTargetSize = $button.attr('data-size');
+        var imgSuitableSize = this.getImageSuitableSize(imgOriginalSize, imgTargetSize, this.imageAvailableSizesList);
+        var imgUrlPostfixes = (this.imageAvailableSizesList).map(function(val) { return `_${val}`; });
 
-            if ($(this).hasClass('medium-editor-button-active')) {
-                $p.addClass(className);
+        imgUrl = imgUrl.replace(new RegExp(imgUrlPostfixes.join('|')), '');
 
-                if (that.options.styles[$(this).data('action')].added) {
-                    that.options.styles[$(this).data('action')].added($p);
+        if (imgSuitableSize) {
+            imgUrl = `${imgUrl}_${imgSuitableSize}`;
+        }
+
+        $lis.find('button').attr('disabled', 'disabled');
+        $currentImage.after('<div class="medium-insert-images-progress"></div>');
+
+        domImage.onload = function () {
+            $currentImage.attr('src', imgUrl);
+
+            $lis.find('button').each(function () {
+                var className = 'medium-insert-images-' + $(this).data('action');
+
+                if ($(this).hasClass('medium-editor-button-active')) {
+                    $p.addClass(className);
+
+                    if (that.options.styles[$(this).data('action')].added) {
+                        that.options.styles[$(this).data('action')].added($p);
+                    }
+                } else {
+                    $p.removeClass(className);
+
+                    if (that.options.styles[$(this).data('action')].removed) {
+                        that.options.styles[$(this).data('action')].removed($p);
+                    }
                 }
-            } else {
-                $p.removeClass(className);
+            });
 
-                if (that.options.styles[$(this).data('action')].removed) {
-                    that.options.styles[$(this).data('action')].removed($p);
-                }
-            }
-        });
+            $lis.find('button').removeAttr('disabled');
+            $currentImage.next('.medium-insert-images-progress').remove();
 
-        this.core.hideButtons();
+            that.core.hideButtons();
+            that.repositionToolbars();
+            that.core.triggerInput();
+        };
 
-        this.core.triggerInput();
+        domImage.src = imgUrl;
     };
 
     /**
@@ -773,6 +820,53 @@
     Images.prototype.sorting = function () {
         $.proxy(this.options.sorting, this)();
     };
+
+    /**
+     * Gets suitable image size
+     * @param orginalSize
+     * @param targetSize
+     * @param sizes
+     * @returns {*}
+     */
+    Images.prototype.getImageSuitableSize = function (orginalSize, targetSize, sizes) {
+        orginalSize = parseInt(orginalSize);
+        targetSize = parseInt(targetSize);
+
+        if (!sizes.includes(targetSize)) {
+            throw new Error('Wrong "targetSize" value');
+        }
+
+        if (orginalSize >= targetSize) {
+            return targetSize;
+        }
+
+        var sizesNew = sizes.filter((size) => {
+            return size <= orginalSize;
+        });
+
+        return (sizesNew.length !== 0) ? Math.max(...sizesNew) : null;
+    };
+
+    /**
+     * Gets image available sizes
+     * @param orginalSize
+     * @param targetSize
+     * @param sizes
+     * @returns {*}
+     */
+    Images.prototype.getImageAvailableSizesList = function () {
+        var imageStylesList = this.options.styles;
+        var availableSizes = [];
+
+        Object.keys(imageStylesList).forEach(function (styleItem) {
+            if (imageStylesList[styleItem]) {
+                availableSizes.push(imageStylesList[styleItem].size);
+            }
+        });
+
+        return availableSizes;
+    };
+
 
     /** Plugin initialization */
 
