@@ -1604,6 +1604,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             uploadData: {},
             // errorCustomCallback: function () {},
             generateMediaUniqueIdCallback: function () {},
+            getImageSuitableSizeCallback: function () {},
             getUploadedImageCustomCallback: function () {},
             imageDefaultSize: 800,
             acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i,
@@ -1927,13 +1928,17 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         var $imgEl = $imgWrapper.find('img');
         var imageDefaultSize = this.options.imageDefaultSize;
 
-        var imgSuitableSize = this.getImageSuitableSize(originalWidth, imageDefaultSize, this.imageAvailableSizesList)
+        var imgSuitableSize = this.options.getImageSuitableSizeCallback(originalWidth, imageDefaultSize, this.imageAvailableSizesList)
         if (imgSuitableSize) {
             imgUrl = `${imgUrl}_${imgSuitableSize}`;
         }
 
         domImage.onload = function () {
-            $imgEl.attr('src', imgUrl);
+            $imgEl.attr({
+                'src': imgUrl,
+                'data-original-width': originalWidth,
+                'data-original-height': originalHeight,
+            });
 
             $imgWrapper.attr({
                 'data-original-width': originalWidth,
@@ -2328,7 +2333,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         var imgUrl = $currentImage.attr('src');
         var imgOriginalSize = $p.attr('data-original-width');
         var imgTargetSize = $button.attr('data-size');
-        var imgSuitableSize = this.getImageSuitableSize(imgOriginalSize, imgTargetSize, this.imageAvailableSizesList);
+        var imgSuitableSize = this.options.getImageSuitableSizeCallback(imgOriginalSize, imgTargetSize, this.imageAvailableSizesList);
         var imgUrlPostfixes = (this.imageAvailableSizesList).map(function(val) { return `_${val}`; });
 
         imgUrl = imgUrl.replace(new RegExp(imgUrlPostfixes.join('|')), '');
@@ -2406,32 +2411,6 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
 
     Images.prototype.sorting = function () {
         $.proxy(this.options.sorting, this)();
-    };
-
-    /**
-     * Gets suitable image size
-     * @param orginalSize
-     * @param targetSize
-     * @param sizes
-     * @returns {*}
-     */
-    Images.prototype.getImageSuitableSize = function (orginalSize, targetSize, sizes) {
-        orginalSize = parseInt(orginalSize);
-        targetSize = parseInt(targetSize);
-
-        if (!sizes.includes(targetSize)) {
-            throw new Error('Wrong "targetSize" value');
-        }
-
-        if (orginalSize >= targetSize) {
-            return targetSize;
-        }
-
-        var sizesNew = sizes.filter((size) => {
-            return size <= orginalSize;
-        });
-
-        return (sizesNew.length !== 0) ? Math.max(...sizesNew) : null;
     };
 
     /**
