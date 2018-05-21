@@ -1603,9 +1603,9 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             uploadCustomCallback: function () {},
             uploadData: {},
             // errorCustomCallback: function () {},
-            generateMediaUniqueIdCallback: function () {},
-            getImageSuitableSizeCallback: function () {},
-            getUploadedImageCustomCallback: function () {},
+            generateMediaUniqueIdCallback: function () {}, // required
+            getImageSuitableSizeCallback: function () {}, // required
+            getUploadedImageCustomCallback: function () {}, // required
             imageDefaultSize: 800,
             acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i,
             maxFileSize: 1024 * 1024, //bytes
