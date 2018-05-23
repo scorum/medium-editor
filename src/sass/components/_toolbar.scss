@@ -26,7 +26,7 @@
     left: 0;
     position: absolute;
     top: 0;
-    visibility: hidden;
+    display: none;
     z-index: $z-toolbar;
 
     ul {
@@ -69,7 +69,7 @@
 }
 
 .medium-editor-toolbar-active {
-    visibility: visible;
+    display: block;
 }
 
 .medium-editor-sticky-toolbar {
@@ -78,7 +78,7 @@
 }
 
 .medium-editor-relative-toolbar {
-  position: relative;
+    position: relative;
 }
 
 .medium-editor-toolbar-active.medium-editor-stalker-toolbar {
