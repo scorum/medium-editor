@@ -3,13 +3,13 @@
     font-size: 16px;
     left: 0;
     line-height: 1.4;
-    max-width: 280px;
+    max-width: 300px;
     position: absolute;
     text-align: center;
     top: 0;
     word-break: break-all;
     word-wrap: break-word;
-    visibility: hidden;
+    display: none;
     z-index: $z-toolbar;
 
     a {
@@ -20,5 +20,5 @@
 }
 
 .medium-editor-anchor-preview-active {
-    visibility: visible;
+    display: block;
 }
