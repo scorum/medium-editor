@@ -94,7 +94,7 @@
   left: 0;
   position: absolute;
   top: 0;
-  visibility: hidden;
+  display: none;
   z-index: 2000; }
   .medium-editor-toolbar ul {
     margin: 0;
@@ -124,7 +124,7 @@
       padding: 15px 0; }
 
 .medium-editor-toolbar-active {
-  visibility: visible; }
+  display: block; }
 
 .medium-editor-sticky-toolbar {
   position: fixed;
