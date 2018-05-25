@@ -470,6 +470,16 @@
         $el.find('.medium-insert-buttons').hide();
         $el.find('.medium-insert-buttons-addons').hide();
         $el.find('.medium-insert-buttons-show').removeClass('medium-insert-buttons-rotate');
+
+        if (this.$el) {
+            var hasPlaceholder = this.$el.hasClass('medium-editor-placeholder') || this.$el.hasClass('medium-editor-placeholder-relative');
+
+            this.$el.removeClass('medium-insert-buttons-active');
+
+            if (hasPlaceholder) {
+                this.$el.focus();
+            }
+        }
     };
 
     /**
@@ -491,9 +501,9 @@
             position.top = $p.position().top;
 
             if (activeAddon) {
-               position.top += $p.height() - 20 + ($lastCaption.length ? -$lastCaption.height() - parseInt($lastCaption.css('margin-top'), 10) : 10);
+                position.top += $p.height() - 20 + ($lastCaption.length ? -$lastCaption.height() - parseInt($lastCaption.css('margin-top'), 10) : 10);
             } else {
-               position.top += parseInt($p.css('margin-top'), 10);
+                position.top += parseInt($p.css('margin-top'), 10);
             }
 
             if (elementsContainerAbsolute) {
@@ -518,6 +528,27 @@
 
         this.$el.find('.medium-insert-buttons-addons').fadeToggle();
         this.$el.find('.medium-insert-buttons-show').toggleClass('medium-insert-buttons-rotate');
+
+        if (this.$el) {
+            var addonsBlockIsOpen = this.$el.find('.medium-insert-buttons-show').hasClass('medium-insert-buttons-rotate');
+            var hasPlaceholder = this.$el.hasClass('medium-editor-placeholder') || this.$el.hasClass('medium-editor-placeholder-relative');
+
+            if (addonsBlockIsOpen) {
+                if (!this.$el.hasClass('medium-insert-buttons-active')) {
+                    this.$el.addClass('medium-insert-buttons-active');
+                }
+
+                if (hasPlaceholder) {
+                    this.$el.blur();
+                }
+            } else {
+                this.$el.removeClass('medium-insert-buttons-active');
+
+                if (hasPlaceholder) {
+                    this.$el.focus();
+                }
+            }
+        }
     };
 
     /**
@@ -529,6 +560,16 @@
     Core.prototype.hideAddons = function () {
         this.$el.find('.medium-insert-buttons-addons').hide();
         this.$el.find('.medium-insert-buttons-show').removeClass('medium-insert-buttons-rotate');
+
+        if (this.$el) {
+            var hasPlaceholder = this.$el.hasClass('medium-editor-placeholder') || this.$el.hasClass('medium-editor-placeholder-relative');
+
+            this.$el.removeClass('medium-insert-buttons-active');
+
+            if (hasPlaceholder) {
+                this.$el.focus();
+            }
+        }
     };
 
     /**
