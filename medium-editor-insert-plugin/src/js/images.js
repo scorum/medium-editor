@@ -182,6 +182,7 @@
 
             $data.find('.medium-insert-images').find('figcaption, figure').removeAttr('contenteditable');
             $data.find('.medium-insert-images-progress').remove();
+            $data.find('.medium-insert-image-active').removeClass('medium-insert-image-active');
 
             data[key].value = $data.html();
         });
@@ -677,23 +678,28 @@
             elementsContainerAbsolute = ['absolute', 'fixed'].indexOf(window.getComputedStyle(elementsContainer).getPropertyValue('position')) > -1,
             elementsContainerBoundary = elementsContainerAbsolute ? elementsContainer.getBoundingClientRect() : null,
             containerWidth = $(window).width(),
-            position = {};
+            position = {},
+            position2 = {};
 
         if ($toolbar2.length) {
-            position.top = $image.offset().top + 2;
-            position.left = $image.offset().left + $image.width() - $toolbar2.width() - 4; // 4px - distance from a border
-
             if (elementsContainerAbsolute) {
-                position.top += elementsContainer.scrollTop - elementsContainerBoundary.top;
-                position.left -= elementsContainerBoundary.left;
+                position2.top += elementsContainer.scrollTop - elementsContainerBoundary.top;
+                position2.left -= elementsContainerBoundary.left;
                 containerWidth = $(elementsContainer).width();
+            } else {
+                if ($image.length) {
+                    position2.top = $image.offset().top + 2;
+                    position2.left = $image.offset().left + $image.width() - $toolbar2.width() - 4; // 4px - distance from a border
+                }
             }
 
-            if (position.left + $toolbar2.width() > containerWidth) {
-                position.left = containerWidth - $toolbar2.width();
-            }
+            if (Object.keys(position2).length !== 0) {
+                if (position2.left + $toolbar2.width() > containerWidth) {
+                    position2.left = containerWidth - $toolbar2.width();
+                }
 
-            $toolbar2.css(position);
+                $toolbar2.css(position2);
+            }
         }
 
         if ($toolbar.length) {
@@ -701,19 +707,23 @@
                 $image = $image.closest('.medium-insert-images-grid-active');
             }
 
-            position.top = $image.offset().top - $toolbar.height() - 8 - 2 - 5; // 8px - hight of an arrow under toolbar, 2px - height of an image outset, 5px - distance from an image
-            position.left = $image.offset().left + $image.width() / 2 - $toolbar.width() / 2;
-
             if (elementsContainerAbsolute) {
                 position.top += elementsContainer.scrollTop - elementsContainerBoundary.top;
                 position.left -= elementsContainerBoundary.left;
+            } else {
+                if ($image.length) {
+                    position.top = $image.offset().top - $toolbar.height() - 8 - 2 - 5; // 8px - hight of an arrow under toolbar, 2px - height of an image outset, 5px - distance from an image
+                    position.left = $image.offset().left + $image.width() / 2 - $toolbar.width() / 2;
+                }
             }
 
-            if (position.top < 0) {
-                position.top = 0;
-            }
+            if (Object.keys(position).length !== 0) {
+                if (position.top < 0) {
+                    position.top = 0;
+                }
 
-            $toolbar.css(position);
+                $toolbar.css(position);
+            }
         }
     };
 
