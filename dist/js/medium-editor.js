@@ -5448,12 +5448,13 @@ MediumEditor.extensions = {};
         },
         onInput: function () {
             var listStart = this.base.getSelectedParentElement().textContent;
-            if (/1(\.|\))\s/.test(listStart)) {
+
+            if (/^1(\.|\))\s/.test(listStart)) {
                 this.base.execAction('delete');
                 this.base.execAction('delete');
                 this.base.execAction('delete');
                 this.base.execAction('insertorderedlist');
-            } else if (/(\*|-)\s/.test(listStart)) {
+            } else if (/^(\*|-)\s/.test(listStart)) {
                 this.base.execAction('delete');
                 this.base.execAction('delete');
                 this.base.execAction('insertunorderedlist');

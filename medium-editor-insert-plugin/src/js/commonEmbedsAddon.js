@@ -164,6 +164,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             $embeds.find('figcaption').removeAttr('contenteditable');
             $data.find('.medium-insert-embeds-overlay').remove();
             $embeds.find('.medium-insert-embed').empty();
+            $data.find('.medium-insert-embeds-selected').removeClass('medium-insert-embeds-selected');
 
             data[key].value = $data.html();
         });
@@ -500,6 +501,10 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         var $el = $(e.target).hasClass('medium-insert-embeds') ? $(e.target) : $(e.target).closest('.medium-insert-embeds'),
             $embed = this.$el.find('.medium-insert-embeds-selected');
 
+        if ($(e.target).closest('.medium-editor-action').length !== 0) {
+            return false;
+        }
+
         if ($el.hasClass('medium-insert-embeds-selected')) {
             $embed.not($el).removeClass('medium-insert-embeds-selected');
             $('.medium-insert-embeds-toolbar, .medium-insert-embeds-toolbar2').remove();
@@ -610,39 +615,48 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             elementsContainerAbsolute = ['absolute', 'fixed'].indexOf(window.getComputedStyle(elementsContainer).getPropertyValue('position')) > -1,
             elementsContainerBoundary = elementsContainerAbsolute ? elementsContainer.getBoundingClientRect() : null,
             containerWidth = $(window).width(),
-            position = {};
+            position = {},
+            position2 = {};
 
         if ($toolbar2.length) {
-            position.top = $embed.offset().top + 2; // 2px - distance from a border
-            position.left = $embed.offset().left + $embed.width() - $toolbar2.width() - 4; // 4px - distance from a border
-
             if (elementsContainerAbsolute) {
-                position.top += elementsContainer.scrollTop - elementsContainerBoundary.top;
-                position.left -= elementsContainerBoundary.left;
+                position2.top += elementsContainer.scrollTop - elementsContainerBoundary.top;
+                position2.left -= elementsContainerBoundary.left;
                 containerWidth = $(elementsContainer).width();
+            } else {
+                if ($embed.length) {
+                    position2.top = $embed.offset().top + 2; // 2px - distance from a border
+                    position2.left = $embed.offset().left + $embed.width() - $toolbar2.width() - 4; // 4px - distance from a border
+                }
             }
 
-            if (position.left + $toolbar2.width() > containerWidth) {
-                position.left = containerWidth - $toolbar2.width();
-            }
+            if (Object.keys(position2).length !== 0) {
+                if (position2.left + $toolbar2.width() > containerWidth) {
+                    position2.left = containerWidth - $toolbar2.width();
+                }
 
-            $toolbar2.css(position);
+                $toolbar2.css(position2);
+            }
         }
 
         if ($toolbar.length) {
-            position.left = $embed.offset().left + $embed.width() / 2 - $toolbar.width() / 2;
-            position.top = $embed.offset().top - $toolbar.height() - 8 - 2 - 5; // 8px - hight of an arrow under toolbar, 2px - height of an embed outset, 5px - distance from an embed
-
             if (elementsContainerAbsolute) {
                 position.top += elementsContainer.scrollTop - elementsContainerBoundary.top;
                 position.left -= elementsContainerBoundary.left;
+            } else {
+                if ($embed.length) {
+                    position.left = $embed.offset().left + $embed.width() / 2 - $toolbar.width() / 2;
+                    position.top = $embed.offset().top - $toolbar.height() - 8 - 2 - 5; // 8px - hight of an arrow under toolbar, 2px - height of an embed outset, 5px - distance from an embed
+                }
             }
 
-            if (position.top < 0) {
-                position.top = 0;
-            }
+            if (Object.keys(position).length !== 0) {
+                if (position.top < 0) {
+                    position.top = 0;
+                }
 
-            $toolbar.css(position);
+                $toolbar.css(position);
+            }
         }
     };
 
@@ -682,6 +696,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             }
         });
 
+        this.repositionToolbars();
         this.core.triggerInput();
     };
 
