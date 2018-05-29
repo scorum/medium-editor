@@ -1,21 +1,27 @@
 {
   "name": "@scorum/medium-editor",
-  "version": "5.24.0",
+  "version": "5.24.1",
   "author": "Davi Ferreira <hi@daviferreira.com>",
   "description": "Fork of Medium.com WYSIWYG editor clone.",
   "main": "dist/js/medium-editor.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yabwe/medium-editor"
+    "url": "git+https://github.com/scorum/medium-editor"
   },
+  "contributors": [
+    {
+      "name": "jekahm",
+      "email": "yevhen.tuchak@gmail.com"
+    }
+  ],
   "bugs": {
-    "url": "https://github.com/yabwe/medium-editor/issues",
-    "email": "hi@daviferreira.com"
+    "url": "https://github.com/scorum/medium-editor/issues",
+    "email": "yevhen.tuchak@gmail.com"
   },
   "homepage": "http://yabwe.github.io/medium-editor/",
   "keywords": [],
   "publishConfig": {
-    "registry": "http://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/"
   },
   "license": "MIT",
   "dependencies": {
