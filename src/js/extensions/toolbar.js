@@ -451,31 +451,68 @@
         /**
          * Checks whether button should be disabled when one of the buttons
          * which are in one's `disableForAppliedActions` property (array of actions) is already applied
+         *
+         * Also checks whether button should be disabled if it has `disableForFigcaptionBlock` property and
+         * current selected text is in `figcaption` element
          */
         checkButtonsDisablingNecessity: function () {
+            var selectionRange = MediumEditor.selection.getSelectionRange(this.document);
+
+            if (!selectionRange) {
+                return;
+            }
+
+            var parentNode = MediumEditor.selection.getSelectedParentElement(selectionRange);
+            var isSelectionInFigcaptionBlock = parentNode.closest('figcaption');
             var extensions = this.base.extensions;
 
+            var makeButtonAsDisabled = function (extension) {
+                if (!extension.button) {
+                    return false;
+                }
+
+                extension.setInactive();
+                extension.button.classList.add('medium-editor-button-disabled');
+                extension.button.setAttribute('disabled', 'disabled');
+            };
+
+            var makeButtonAsActive = function (extension) {
+                if (!extension.button) {
+                    return false;
+                }
+
+                extension.button.classList.remove('medium-editor-button-disabled');
+                extension.button.removeAttribute('disabled');
+            };
+
             extensions.forEach(function (commonExtension) {
-                var actions = commonExtension.disableForAppliedActions;
+                makeButtonAsActive(commonExtension);
 
-                if (typeof actions !== 'undefined' && Array.isArray(actions)) {
+                if (isSelectionInFigcaptionBlock) {
+                    if (commonExtension.disableForFigcaptionBlock) {
+                        makeButtonAsDisabled(commonExtension);
+                    } else {
+                        makeButtonAsActive(commonExtension);
+                    }
+                } else {
+                    var actions = commonExtension.disableForAppliedActions;
 
-                    extensions.some(function (toolbarExtension) {
-                        if (actions.indexOf(toolbarExtension.action) !== -1
-                            && typeof toolbarExtension.isActive === 'function'
-                            && typeof toolbarExtension.setInactive === 'function')
-                        {
-                            if (toolbarExtension.isActive() === true) {
-                                commonExtension.setInactive();
-                                commonExtension.button.classList.add('medium-editor-button-disabled');
-                                commonExtension.button.setAttribute('disabled', 'disabled');
-                                return true;
-                            } else {
-                                commonExtension.button.classList.remove('medium-editor-button-disabled');
-                                commonExtension.button.removeAttribute('disabled');
+                    if (typeof actions !== 'undefined' && Array.isArray(actions)) {
+
+                        extensions.some(function (toolbarExtension) {
+                            if (actions.indexOf(toolbarExtension.action) !== -1
+                                && typeof toolbarExtension.isActive === 'function'
+                                && typeof toolbarExtension.setInactive === 'function')
+                            {
+                                if (toolbarExtension.isActive() === true) {
+                                    makeButtonAsDisabled(commonExtension);
+                                    return true;
+                                } else {
+                                    makeButtonAsActive(commonExtension);
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             });
         },
