@@ -92,6 +92,12 @@
          */
         disableForAppliedActions: undefined,
 
+        /**
+         * disableForAppliedActions: [Boolean]
+         * Indicates whether the the current button should be disabled if the selected text is in `figcaption` element
+         */
+        disableForFigcaptionBlock: undefined,
+
         // The button constructor can optionally accept the name of a built-in button
         // (ie 'bold', 'italic', etc.)
         // When the name of a button is passed, it will initialize itself with the

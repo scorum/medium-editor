@@ -1008,12 +1008,13 @@
             }
         },
 
-        selectElement: function (element) {
+        selectElement: function (element, applyCurrentElement) {
             MediumEditor.selection.selectNode(element, this.options.ownerDocument);
 
             var selElement = MediumEditor.selection.getSelectionElement(this.options.contentWindow);
+
             if (selElement) {
-                this.events.focusElement(selElement);
+                this.events.focusElement(applyCurrentElement ? element : selElement);
             }
         },
 

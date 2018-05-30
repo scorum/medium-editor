@@ -180,7 +180,9 @@
             if (anchorExtension && activeAnchor) {
                 event.preventDefault();
 
-                this.base.selectElement(this.activeAnchor);
+                var isElementInFigcaptionBlock = this.activeAnchor.closest('figcaption') ? true : false;
+
+                this.base.selectElement(this.activeAnchor, isElementInFigcaptionBlock);
 
                 // Using setTimeout + delay because:
                 // We may actually be displaying the anchor form, which should be controlled by delay

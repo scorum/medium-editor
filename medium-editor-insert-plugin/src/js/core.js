@@ -1,4 +1,4 @@
-;(function ($, window, document, undefined) {
+;(function ($, window, document, Util, undefined) {
 
     'use strict';
 
@@ -115,6 +115,7 @@
                 e.preventDefault();
             })
             .on('keyup click', $.proxy(this, 'toggleButtons'))
+            .on('keydown', 'figcaption', $.proxy(this, 'checkCaptionBehavior'))
             .on('selectstart mousedown', '.medium-insert, .medium-insert-buttons', $.proxy(this, 'disableSelection'))
             .on('click', '.medium-insert-buttons-show', $.proxy(this, 'toggleAddons'))
             .on('click', '.medium-insert-action', $.proxy(this, 'addonAction'))
@@ -671,18 +672,40 @@
         }
     };
 
+    Core.prototype.checkCaptionBehavior = function (e) {
+        var $el = $(e.target);
+
+        if (Util.isKey(e, Util.keyCode.ENTER)) {
+            var $wrapper = $el.closest('.medium-insert-images, .medium-insert-embeds');
+
+            if (!$wrapper.length) {
+                return false;
+            }
+
+            if ($wrapper.next().is('p')) {
+                this.moveCaret($wrapper.next());
+            } else {
+                $wrapper.after('<p><br></p>');
+                this.moveCaret($wrapper.next());
+            }
+
+            this.triggerInput();
+
+            return false;
+        }
+    };
+
     /**
      * Async delay helper
      *
      * @param {number} time
      * @return {Promise}
      */
-
-    Core.prototype._delayAsync = function(time = 1) {
-        return new Promise(function(resolve) {
-            setTimeout(function() {
+    Core.prototype._delayAsync = function (time = 1) {
+        return new Promise(function (resolve) {
+            setTimeout(function () {
                 resolve();
-            }, time)
+            }, time);
         });
     };
 
@@ -709,4 +732,4 @@
         });
     };
 
-})(jQuery, window, document);
+})(jQuery, window, document, MediumEditor.util);

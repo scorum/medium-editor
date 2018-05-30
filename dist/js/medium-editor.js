@@ -2757,6 +2757,12 @@ MediumEditor.extensions = {};
          */
         disableForAppliedActions: undefined,
 
+        /**
+         * disableForAppliedActions: [Boolean]
+         * Indicates whether the the current button should be disabled if the selected text is in `figcaption` element
+         */
+        disableForFigcaptionBlock: undefined,
+
         // The button constructor can optionally accept the name of a built-in button
         // (ie 'bold', 'italic', etc.)
         // When the name of a button is passed, it will initialize itself with the
@@ -3843,7 +3849,9 @@ MediumEditor.extensions = {};
             if (anchorExtension && activeAnchor) {
                 event.preventDefault();
 
-                this.base.selectElement(this.activeAnchor);
+                var isElementInFigcaptionBlock = this.activeAnchor.closest('figcaption') ? true : false;
+
+                this.base.selectElement(this.activeAnchor, isElementInFigcaptionBlock);
 
                 // Using setTimeout + delay because:
                 // We may actually be displaying the anchor form, which should be controlled by delay
@@ -5917,31 +5925,68 @@ MediumEditor.extensions = {};
         /**
          * Checks whether button should be disabled when one of the buttons
          * which are in one's `disableForAppliedActions` property (array of actions) is already applied
+         *
+         * Also checks whether button should be disabled if it has `disableForFigcaptionBlock` property and
+         * current selected text is in `figcaption` element
          */
         checkButtonsDisablingNecessity: function () {
+            var selectionRange = MediumEditor.selection.getSelectionRange(this.document);
+
+            if (!selectionRange) {
+                return;
+            }
+
+            var parentNode = MediumEditor.selection.getSelectedParentElement(selectionRange);
+            var isSelectionInFigcaptionBlock = parentNode.closest('figcaption');
             var extensions = this.base.extensions;
 
+            var makeButtonAsDisabled = function (extension) {
+                if (!extension.button) {
+                    return false;
+                }
+
+                extension.setInactive();
+                extension.button.classList.add('medium-editor-button-disabled');
+                extension.button.setAttribute('disabled', 'disabled');
+            };
+
+            var makeButtonAsActive = function (extension) {
+                if (!extension.button) {
+                    return false;
+                }
+
+                extension.button.classList.remove('medium-editor-button-disabled');
+                extension.button.removeAttribute('disabled');
+            };
+
             extensions.forEach(function (commonExtension) {
-                var actions = commonExtension.disableForAppliedActions;
+                makeButtonAsActive(commonExtension);
 
-                if (typeof actions !== 'undefined' && Array.isArray(actions)) {
+                if (isSelectionInFigcaptionBlock) {
+                    if (commonExtension.disableForFigcaptionBlock) {
+                        makeButtonAsDisabled(commonExtension);
+                    } else {
+                        makeButtonAsActive(commonExtension);
+                    }
+                } else {
+                    var actions = commonExtension.disableForAppliedActions;
 
-                    extensions.some(function (toolbarExtension) {
-                        if (actions.indexOf(toolbarExtension.action) !== -1
-                            && typeof toolbarExtension.isActive === 'function'
-                            && typeof toolbarExtension.setInactive === 'function')
-                        {
-                            if (toolbarExtension.isActive() === true) {
-                                commonExtension.setInactive();
-                                commonExtension.button.classList.add('medium-editor-button-disabled');
-                                commonExtension.button.setAttribute('disabled', 'disabled');
-                                return true;
-                            } else {
-                                commonExtension.button.classList.remove('medium-editor-button-disabled');
-                                commonExtension.button.removeAttribute('disabled');
+                    if (typeof actions !== 'undefined' && Array.isArray(actions)) {
+
+                        extensions.some(function (toolbarExtension) {
+                            if (actions.indexOf(toolbarExtension.action) !== -1
+                                && typeof toolbarExtension.isActive === 'function'
+                                && typeof toolbarExtension.setInactive === 'function')
+                            {
+                                if (toolbarExtension.isActive() === true) {
+                                    makeButtonAsDisabled(commonExtension);
+                                    return true;
+                                } else {
+                                    makeButtonAsActive(commonExtension);
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             });
         },
@@ -7252,12 +7297,13 @@ MediumEditor.extensions = {};
             }
         },
 
-        selectElement: function (element) {
+        selectElement: function (element, applyCurrentElement) {
             MediumEditor.selection.selectNode(element, this.options.ownerDocument);
 
             var selElement = MediumEditor.selection.getSelectionElement(this.options.contentWindow);
+
             if (selElement) {
-                this.events.focusElement(selElement);
+                this.events.focusElement(applyCurrentElement ? element : selElement);
             }
         },
 
