@@ -97,6 +97,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             }
         });
 
+        this.checkEditorPlaceholderVisibility();
         this.events();
         this.backwardsCompatibility();
     };
@@ -145,6 +146,20 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
                 $(this).remove();
             }
         });
+    };
+
+    /**
+     * Checks whether editor has visible placeholder,
+     * even despite the fact that it already contains embed objects (medium editor bug).
+     * If true - then removes this placeholder
+     */
+    CommonEmbedsAddon.prototype.checkEditorPlaceholderVisibility = function () {
+        var $embeds = this.$el.find('.medium-insert-embeds');
+        var $editor = $('.medium-editor-element');
+
+        if ($embeds.length !== 0 && $editor.hasClass('medium-editor-placeholder')) {
+            $editor.removeClass('medium-editor-placeholder');
+        }
     };
 
     /**
