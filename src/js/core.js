@@ -1205,6 +1205,11 @@
                             this.importSelection(exportedSelection);
                         } else {
                             this.options.ownerDocument.execCommand('createLink', false, targetUrl);
+
+                            // Resolves FF bug with wrong encoding in link's href value
+                            if (MediumEditor.util.isFF) {
+                                MediumEditor.util.ensureLinkHref(MediumEditor.selection.getSelectionStart(this.options.ownerDocument), targetUrl);
+                            }
                         }
 
                         if (this.options.targetBlank || opts.target === '_blank') {

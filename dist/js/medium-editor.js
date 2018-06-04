@@ -594,6 +594,26 @@ MediumEditor.extensions = {};
         },
 
         /**
+         * Ensures whether current selected link's href value is set correct
+         * as FF does wrong encoding on href value when execCommand createLink.
+         * see also https://bugzilla.mozilla.org/show_bug.cgi?id=451142
+         */
+        ensureLinkHref: function (el, anchorUrl) {
+            var i, url = anchorUrl;
+            if (el.nodeName.toLowerCase() === 'a') {
+                el.attributes.href.value = url;
+            } /*else {
+                el = el.getElementsByTagName('a');
+
+                for (i = 0; i < el.length; i += 1) {
+                    if (encodeURI(url) === el[i].attributes.href.value) {
+                        el[i].attributes.href.value = url;
+                    }
+                }
+            }*/
+        },
+
+        /**
          * Set target to blank on the given el element
          *
          * TODO: not sure if this should be here
@@ -7494,6 +7514,11 @@ MediumEditor.extensions = {};
                             this.importSelection(exportedSelection);
                         } else {
                             this.options.ownerDocument.execCommand('createLink', false, targetUrl);
+
+                            // Resolves FF bug with wrong encoding in link's href value
+                            if (MediumEditor.util.isFF) {
+                                MediumEditor.util.ensureLinkHref(MediumEditor.selection.getSelectionStart(this.options.ownerDocument), targetUrl);
+                            }
                         }
 
                         if (this.options.targetBlank || opts.target === '_blank') {
