@@ -573,6 +573,26 @@
         },
 
         /**
+         * Ensures whether current selected link's href value is set correct
+         * as FF does wrong encoding on href value when execCommand createLink.
+         * see also https://bugzilla.mozilla.org/show_bug.cgi?id=451142
+         */
+        ensureLinkHref: function (el, anchorUrl) {
+            var i, url = anchorUrl;
+            if (el.nodeName.toLowerCase() === 'a') {
+                el.attributes.href.value = url;
+            } /*else {
+                el = el.getElementsByTagName('a');
+
+                for (i = 0; i < el.length; i += 1) {
+                    if (encodeURI(url) === el[i].attributes.href.value) {
+                        el[i].attributes.href.value = url;
+                    }
+                }
+            }*/
+        },
+
+        /**
          * Set target to blank on the given el element
          *
          * TODO: not sure if this should be here
