@@ -7046,6 +7046,69 @@ MediumEditor.extensions = {};
             return this.setup();
         },
 
+        /**
+         * Initializes Elements Observer
+         * @returns {boolean}
+         */
+        initElementsObserver: function () {
+            var DOMMutationObserver,
+                mutationObserverInstance,
+                targetNode,
+                targetNodeName,
+                addedNode,
+                instance = this;
+
+            if (typeof window.WebKitMutationObserver !== 'undefined') {
+                DOMMutationObserver = window.WebKitMutationObserver;
+            } else if (typeof window.MutationObserver !== 'undefined') {
+                DOMMutationObserver = window.MutationObserver;
+            } else {
+                // DOM Mutation Observer doesn't exist (i.e. for IE < 11)
+                return false;
+            }
+
+            mutationObserverInstance = new DOMMutationObserver(function (mutations) {
+                mutations.forEach(function (mutation) {
+                    if (mutation.type.toLowerCase() === 'childlist') {
+                        targetNode = mutation.target;
+                        targetNodeName = targetNode.nodeName.toLowerCase();
+
+                        // Checks whether mutation had place in `paragrapgh` or `blockquote` elements
+                        if (targetNodeName === 'p' || targetNodeName === 'blockquote') {
+
+                            // Loop through all inserted nodes
+                            for (var i = 0; i < mutation.addedNodes.length; i++) {
+                                addedNode = mutation.addedNodes[i];
+
+                                // Checks whether inserted node is a `span` (for all browsers)
+                                // or `paragraph` inside `blockquote` element (for all browsers except FF)
+                                // If true - then it should be unwraped
+                                // in order to insert the plain text instead it
+                                if (addedNode.nodeName.toLowerCase() === 'span'
+                                    || (!MediumEditor.util.isFF && targetNodeName === 'blockquote'
+                                        && addedNode.nodeName.toLowerCase() === 'p'))
+                                {
+                                    MediumEditor.util.unwrap(addedNode, instance.options.ownerDocument);
+                                }
+
+                                // Checks whether inserted node is `br` inside `blockquote` element
+                                // and this node is first child + not the only child there (for all browsers except FF)
+                                // If true - then it should be unwraped (removed)
+                                if (!MediumEditor.util.isFF && (targetNodeName === 'blockquote'
+                                    && targetNode.childNodes.length > 1
+                                    && targetNode.firstChild.nodeName.toLowerCase() === 'br'))
+                                {
+                                    MediumEditor.util.unwrap(targetNode.firstChild, instance.options.ownerDocument);
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+
+            mutationObserverInstance.observe(this.elements[0], { childList: true, subtree: true });
+        },
+
         setup: function () {
             if (this.isActive) {
                 return;
@@ -7066,6 +7129,9 @@ MediumEditor.extensions = {};
             // Call initialization helpers
             initExtensions.call(this);
             attachHandlers.call(this);
+
+            // Call Elements Observer method
+            this.initElementsObserver();
         },
 
         destroy: function () {
