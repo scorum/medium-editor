@@ -121,7 +121,9 @@
             .on('click', '.medium-insert-action', $.proxy(this, 'addonAction'))
             .on('paste', '.medium-insert-caption-placeholder', function (e) {
                 $.proxy(that, 'removeCaptionPlaceholder')($(e.target));
-            });
+            })
+            .on('mouseenter', '.medium-insert-action', $.proxy(this, 'hoverInInsertActionButton'))
+            .on('mouseleave', '.medium-insert-action', $.proxy(this, 'hoverOutInsertActionButton'));
 
         $(window).on('resize', $.proxy(this, 'positionButtons', null));
     };
@@ -674,6 +676,11 @@
         }
     };
 
+    /**
+     * Checks Image/Embed caption behavior
+     * @param e
+     * @returns {boolean}
+     */
     Core.prototype.checkCaptionBehavior = function (e) {
         var $el = $(e.target);
 
@@ -694,6 +701,32 @@
             this.triggerInput();
 
             return false;
+        }
+    };
+
+    /**
+     * Shows Action button tooltip
+     * @param e
+     */
+    Core.prototype.hoverInInsertActionButton = function(e) {
+        var $el = $(e.target).closest('.medium-insert-action');
+        var tooltipClass = 'medium-insert-action-tooltip';
+
+        if (!$el.find(`.${tooltipClass}`).length) {
+            $el.append(`<div class="${tooltipClass}">${$el.attr('data-tooltip-title')}</div>`);
+        }
+    };
+
+    /**
+     * Hides Action button tooltip
+     * @param e
+     */
+    Core.prototype.hoverOutInsertActionButton = function(e) {
+        var $el = $(e.target).closest('.medium-insert-action');
+        var tooltipClass = 'medium-insert-action-tooltip';
+
+        if ($el.find(`.${tooltipClass}`).length) {
+            $el.find(`.${tooltipClass}`).remove();
         }
     };
 

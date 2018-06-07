@@ -39,7 +39,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/core-buttons.hbs"] = Handleb
 
   return "            <li><button data-addon=\""
     + alias4(((helper = (helper = helpers.key || (data && data.key)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"key","hash":{},"data":data}) : helper)))
-    + "\" data-action=\"add\" class=\"medium-insert-action\" type=\"button\" title=\""
+    + "\" data-action=\"add\" class=\"medium-insert-action\" type=\"button\" data-tooltip-title=\""
     + alias4(((helper = (helper = helpers.tooltipTitle || (depth0 != null ? depth0.tooltipTitle : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"tooltipTitle","hash":{},"data":data}) : helper)))
     + "\">"
     + ((stack1 = ((helper = (helper = helpers.label || (depth0 != null ? depth0.label : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"label","hash":{},"data":data}) : helper))) != null ? stack1 : "")
@@ -291,7 +291,9 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             .on('click', '.medium-insert-action', $.proxy(this, 'addonAction'))
             .on('paste', '.medium-insert-caption-placeholder', function (e) {
                 $.proxy(that, 'removeCaptionPlaceholder')($(e.target));
-            });
+            })
+            .on('mouseenter', '.medium-insert-action', $.proxy(this, 'hoverInInsertActionButton'))
+            .on('mouseleave', '.medium-insert-action', $.proxy(this, 'hoverOutInsertActionButton'));
 
         $(window).on('resize', $.proxy(this, 'positionButtons', null));
     };
@@ -844,6 +846,11 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
         }
     };
 
+    /**
+     * Checks Image/Embed caption behavior
+     * @param e
+     * @returns {boolean}
+     */
     Core.prototype.checkCaptionBehavior = function (e) {
         var $el = $(e.target);
 
@@ -864,6 +871,32 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             this.triggerInput();
 
             return false;
+        }
+    };
+
+    /**
+     * Shows Action button tooltip
+     * @param e
+     */
+    Core.prototype.hoverInInsertActionButton = function(e) {
+        var $el = $(e.target).closest('.medium-insert-action');
+        var tooltipClass = 'medium-insert-action-tooltip';
+
+        if (!$el.find(`.${tooltipClass}`).length) {
+            $el.append(`<div class="${tooltipClass}">${$el.attr('data-tooltip-title')}</div>`);
+        }
+    };
+
+    /**
+     * Hides Action button tooltip
+     * @param e
+     */
+    Core.prototype.hoverOutInsertActionButton = function(e) {
+        var $el = $(e.target).closest('.medium-insert-action');
+        var tooltipClass = 'medium-insert-action-tooltip';
+
+        if ($el.find(`.${tooltipClass}`).length) {
+            $el.find(`.${tooltipClass}`).remove();
         }
     };
 

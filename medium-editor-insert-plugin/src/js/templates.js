@@ -6,7 +6,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/core-buttons.hbs"] = Handleb
 
   return "            <li><button data-addon=\""
     + alias4(((helper = (helper = helpers.key || (data && data.key)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"key","hash":{},"data":data}) : helper)))
-    + "\" data-action=\"add\" class=\"medium-insert-action\" type=\"button\" title=\""
+    + "\" data-action=\"add\" class=\"medium-insert-action\" type=\"button\" data-tooltip-title=\""
     + alias4(((helper = (helper = helpers.tooltipTitle || (depth0 != null ? depth0.tooltipTitle : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"tooltipTitle","hash":{},"data":data}) : helper)))
     + "\">"
     + ((stack1 = ((helper = (helper = helpers.label || (depth0 != null ? depth0.label : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"label","hash":{},"data":data}) : helper))) != null ? stack1 : "")
