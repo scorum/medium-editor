@@ -22,6 +22,7 @@
             imageDefaultSize: 800,
             acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i,
             maxFileSize: 1024 * 1024, //bytes
+            minImageSize: 200, // pixels
             captions: true,
             captionPlaceholder: 'Type caption for image (optional)',
             autoGrid: 3,
@@ -77,7 +78,8 @@
             messages: {
                 acceptFileTypesError: 'This file is not in a supported format: ',
                 maxFileSizeError: 'This file is too big: ',
-                uploadError: 'An error occurred while uploading image'
+                uploadError: 'An error occurred while uploading image',
+                minImageSizeError: 'Image is too small, min size is 200x200',
             },
         };
 
@@ -204,15 +206,16 @@
             .attr('accept', 'image/*')
             .attr('id', 'upload-new-image');
 
-        $file.on('change', function() {
+        var $fileNew = $file;
+
+        $fileNew.on('change', function() {
             that.uploadAdd(this);
         });
 
         (async() => {
             await this.core._delayAsync();
-            $file.click();
+            $fileNew.click();
         })();
-
     };
 
     /**
@@ -227,6 +230,7 @@
             file = data.files[0],
             acceptFileTypes = this.options.acceptFileTypes,
             maxFileSize = this.options.maxFileSize,
+            minImageSize = this.options.minImageSize,
             reader,
             mediaId = this.options.generateMediaUniqueIdCallback();
 
@@ -238,44 +242,65 @@
             uploadErrorMessage = this.options.messages.maxFileSizeError;
         }
 
-        if (uploadErrors) {
-            if (this.options.errorCustomCallback && typeof this.options.errorCustomCallback === "function") {
-                this.options.errorCustomCallback(uploadErrorMessage);
-
-                return false;
-            }
-
-            console.log('Upload errors (' + uploadErrorMessage + ')');
-
-            return false;
-        }
-
         this.core.hideButtons();
 
-        // Replace paragraph with div, because figure elements can't be inside paragraph
-        if ($place.is('p')) {
-            $place.replaceWith('<div class="medium-insert-active">' + $place.html() + '</div>');
-            $place = this.$el.find('.medium-insert-active');
-            if ($place.next().is('p')) {
-                this.core.moveCaret($place.next());
-            } else {
-                $place.after('<p><br></p>'); // add empty paragraph so we can move the caret to the next line.
-                this.core.moveCaret($place.next());
-            }
+        if (uploadErrors) {
+            this.processUploadAddError(uploadErrorMessage);
+            return false;
         }
-
-        data.mediaId = mediaId;
-
-        $place.addClass('medium-insert-images');
-        $place.attr('data-media-id', mediaId);
 
         reader = new FileReader();
 
         reader.onload = function (e) {
-            $.proxy(that, 'showImage', e.target.result, data)();
+            var domImage = that.getDOMImage();
+            var target = e.target.result;
+
+            domImage.src = target;
+
+            domImage.onload = function() {
+                if (this.width < minImageSize || this.height < minImageSize) {
+                    that.processUploadAddError(that.options.messages.minImageSizeError);
+                    return false;
+                }
+
+                // Replace paragraph with div, because figure elements can't be inside paragraph
+                if ($place.is('p')) {
+                    $place.replaceWith('<div class="medium-insert-active">' + $place.html() + '</div>');
+                    $place = that.$el.find('.medium-insert-active');
+                    if ($place.next().is('p')) {
+                        that.core.moveCaret($place.next());
+                    } else {
+                        $place.after('<p><br></p>'); // add empty paragraph so we can move the caret to the next line.
+                        that.core.moveCaret($place.next());
+                    }
+                }
+
+                data.mediaId = mediaId;
+
+                $place.addClass('medium-insert-images');
+                $place.attr('data-media-id', mediaId);
+
+                $.proxy(that, 'showImage', target, data)();
+            };
         };
 
         reader.readAsDataURL(data.files[0]);
+    };
+
+    /**
+     * Calls error handler while checking the image, added for upload dialog
+     * @param message
+     * @returns {boolean}
+     */
+    Images.prototype.processUploadAddError = function (message) {
+        var errorCustomCallback = this.options.errorCustomCallback;
+
+        if (errorCustomCallback && typeof errorCustomCallback === "function") {
+            errorCustomCallback(message);
+            return false;
+        }
+
+        console.log('Upload errors (' + message + ')');
     };
 
     /**
