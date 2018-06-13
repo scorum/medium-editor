@@ -325,7 +325,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             })
             .on('mouseenter', '.medium-insert-action', $.proxy(this, 'hoverInInsertActionButton'))
             .on('mouseleave', '.medium-insert-action', $.proxy(this, 'hoverOutInsertActionButton'))
-            .on('input', $.proxy(this, 'checkEditorToolbarCoachmark'));
+            .on('keydown', $.proxy(this, 'checkEditorToolbarCoachmark'));
 
         $(window).on('resize', $.proxy(this, 'positionButtons', null));
     };
@@ -946,7 +946,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @param $wrapper
      * @returns {boolean}
      */
-    Core.prototype.addHelpCoachmark = function (coachmarkElementData, $wrapper) {
+    Core.prototype.addHelpCoachmark = function (coachmarkElementData, $wrapper, doReposition = false) {
         var that = this;
         var coachmarksOptions = this.options.helpCoachmarksOptions;
         var coachmarkHelpers = coachmarksOptions.helpers;
@@ -958,7 +958,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
 
         var currentCoachmarkElementSelector = `.medium-insert-help-coachmark[data-id="${coachmarkId}"]`;
 
-        // If coachmark id for `show button` doesn't exist in local store then adds it
+        // If coachmark id for certain wrapper element doesn't exist in local store then adds it
         if (!coachmarkHelpers.checkOnExistence(coachmarkId) && $wrapper.find(currentCoachmarkElementSelector).length === 0) {
             $wrapper.append(this.templates['src/js/templates/coachmark-block.hbs']({
                 id: coachmarkId,
@@ -968,6 +968,10 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             }));
 
             console.log('===== addCoachmark', coachmarkId);
+
+            if (doReposition) {
+                this.repositionHelpCoachmark($wrapper.find(currentCoachmarkElementSelector));
+            }
 
             $wrapper.find(currentCoachmarkElementSelector).fadeIn(500);
 
@@ -1007,19 +1011,65 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      */
     Core.prototype.checkEditorToolbarCoachmark = function(e) {
         if (this.$el) {
-            var editorPureText = $(e.target).find('p, h2, h3, blockquote').not($('.medium-insert-embeds > p')).text().trim();
+            var editorPureText = this.$el.find('p, h2, h3, blockquote').not($('.medium-insert-embeds > p')).text().trim();
             var coachmarkElementData = this.options.helpCoachmarksOptions.elements.editorElement;
             var coachmarkId = coachmarkElementData.id;
             var currentCoachmarkElementSelector = `.medium-insert-help-coachmark[data-id="${coachmarkId}"]`;
 
             console.log(editorPureText.length);
 
+            if (Util.isKey(e, Util.keyCode.ENTER)) {
+                this.removeHelpCoachmark(coachmarkId, this.$el.find(currentCoachmarkElementSelector));
+                return;
+            }
+
             // Processes Coachmark functionality
             if (editorPureText.length > 20 && editorPureText.length < 30) {
-                this.addHelpCoachmark(coachmarkElementData, this.$el);
+                this.addHelpCoachmark(coachmarkElementData, this.$el, true);
             } else {
                 this.removeHelpCoachmark(coachmarkId, this.$el.find(currentCoachmarkElementSelector));
             }
+        }
+    }
+
+    /**
+     * Repositions Coachmark element
+     */
+    Core.prototype.repositionHelpCoachmark = function ($currentCoachmarkElement) {
+        var $el,
+            selection = window.getSelection(),
+            that = this,
+            elementsContainer = this.getEditor() ? this.getEditor().options.elementsContainer : $('body').get(0),
+            elementsContainerAbsolute = (['absolute', 'fixed'].indexOf(window.getComputedStyle(elementsContainer).getPropertyValue('position'))) > -1,
+            position = {},
+            range, $current, $el;
+
+        console.log('===== selection', selection);
+
+        if (!selection || selection.rangeCount === 0) {
+            console.log('===== reposition 1');
+            $current = this.$el;
+        } else {
+            console.log('===== reposition 2');
+            range = selection.getRangeAt(0);
+            $current = $(range.commonAncestorContainer);
+        }
+
+        $el = $current.closest('p, h2, h3, blockquote');
+
+        if ($el) {
+            position.left = 0;
+            position.top = $el.position().top + $el.height() + parseInt($el.css('margin-top'), 10) + 16;
+
+            if (elementsContainerAbsolute) {
+                position.top += elementsContainer.scrollTop;
+            }
+
+            $currentCoachmarkElement.css(position);
+
+            console.log('===== reposition Current => ', $el);
+            console.log('===== reposition Height => ', $el);
+            console.log('===== reposition Position => ', position);
         }
     }
 
@@ -2050,10 +2100,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             that.uploadAdd(this);
         });
 
-        (async() => {
-            await this.core._delayAsync();
-            $fileNew.click();
-        })();
+        $fileNew.click();
     };
 
     /**
