@@ -804,7 +804,6 @@
         if ($currentCoachmarkElement.length !== 0) {
             console.log('===== beforeRemove');
 
-
             $currentCoachmarkElement.fadeOut(500, function () {
                 $(this).remove();
 
