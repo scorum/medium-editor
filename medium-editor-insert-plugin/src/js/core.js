@@ -783,8 +783,6 @@
                 buttonText: coachmarkElementData.buttonText,
             }));
 
-            console.log('===== addCoachmark', coachmarkId);
-
             if (doReposition) {
                 this.repositionHelpCoachmark($wrapper.find(currentCoachmarkElementSelector));
             }
@@ -806,15 +804,10 @@
         var coachmarkHelpers = coachmarksOptions.helpers;
 
         if ($currentCoachmarkElement.length !== 0) {
-            console.log('===== beforeRemove');
-
             $currentCoachmarkElement.fadeOut(500, function () {
                 $(this).remove();
 
-                console.log('===== remove from DOM', id); /////
-
                 if (!coachmarkHelpers.checkOnExistence(id)) {
-                    console.log('===== remove from Local store', id); /////
                     coachmarkHelpers.addCoachMarkId(id);
                 }
             });
@@ -831,8 +824,6 @@
             var coachmarkElementData = this.options.helpCoachmarksOptions.elements.editorElement;
             var coachmarkId = coachmarkElementData.id;
             var currentCoachmarkElementSelector = `.medium-insert-help-coachmark[data-id="${coachmarkId}"]`;
-
-            console.log(editorPureText.length);
 
             if (Util.isKey(e, Util.keyCode.ENTER)) {
                 this.removeHelpCoachmark(coachmarkId, this.$el.find(currentCoachmarkElementSelector));
@@ -860,13 +851,9 @@
             position = {},
             range, $current, $el;
 
-        console.log('===== selection', selection);
-
         if (!selection || selection.rangeCount === 0) {
-            console.log('===== reposition 1');
             $current = this.$el;
         } else {
-            console.log('===== reposition 2');
             range = selection.getRangeAt(0);
             $current = $(range.commonAncestorContainer);
         }
@@ -882,10 +869,6 @@
             }
 
             $currentCoachmarkElement.css(position);
-
-            console.log('===== reposition Current => ', $el);
-            console.log('===== reposition Height => ', $el);
-            console.log('===== reposition Position => ', position);
         }
     }
 
