@@ -212,10 +212,7 @@
             that.uploadAdd(this);
         });
 
-        (async() => {
-            await this.core._delayAsync();
-            $fileNew.click();
-        })();
+        $fileNew.click();
     };
 
     /**

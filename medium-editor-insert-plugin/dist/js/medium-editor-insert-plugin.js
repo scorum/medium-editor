@@ -34,6 +34,20 @@
 this["MediumInsert"] = this["MediumInsert"] || {};
 this["MediumInsert"]["Templates"] = this["MediumInsert"]["Templates"] || {};
 
+this["MediumInsert"]["Templates"]["src/js/templates/coachmark-block.hbs"] = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
+    var stack1, helper, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
+
+  return "<div class=\"medium-insert-help-coachmark\" data-id=\""
+    + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
+    + "\" contenteditable=\"false\">\n    <h5>"
+    + alias4(((helper = (helper = helpers.title || (depth0 != null ? depth0.title : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"title","hash":{},"data":data}) : helper)))
+    + "</h5>\n    <div>"
+    + ((stack1 = ((helper = (helper = helpers.content || (depth0 != null ? depth0.content : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"content","hash":{},"data":data}) : helper))) != null ? stack1 : "")
+    + "</div>\n    <button>"
+    + alias4(((helper = (helper = helpers.buttonText || (depth0 != null ? depth0.buttonText : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"buttonText","hash":{},"data":data}) : helper)))
+    + "</button>\n</div>\n";
+},"useData":true});
+
 this["MediumInsert"]["Templates"]["src/js/templates/core-buttons.hbs"] = Handlebars.template({"1":function(container,depth0,helpers,partials,data) {
     var stack1, helper, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
 
@@ -178,6 +192,23 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             editor: null,
             enabled: true,
             showButtonLabel: '<span>+</span>',
+            helpCoachmarksOptions: {
+                elements: {
+                    showButtonElement: {
+                        id: null,
+                        title: null,
+                        content: null,
+                        buttonText: null,
+                    },
+                    editorElement: {
+                        id: null,
+                        title: null,
+                        content: null,
+                        buttonText: null,
+                    },
+                },
+                helpers: null,
+            },
             addons: {
                 images: true, // boolean or object containing configuration
                 videos: true,
@@ -293,7 +324,8 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
                 $.proxy(that, 'removeCaptionPlaceholder')($(e.target));
             })
             .on('mouseenter', '.medium-insert-action', $.proxy(this, 'hoverInInsertActionButton'))
-            .on('mouseleave', '.medium-insert-action', $.proxy(this, 'hoverOutInsertActionButton'));
+            .on('mouseleave', '.medium-insert-action', $.proxy(this, 'hoverOutInsertActionButton'))
+            .on('keydown', $.proxy(this, 'checkEditorToolbarCoachmark'));
 
         $(window).on('resize', $.proxy(this, 'positionButtons', null));
     };
@@ -596,6 +628,10 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
                 if ($p.closest('blockquote').length === 0) {
                     $p.addClass('medium-insert-active');
 
+                    // Processes Coachmark functionality
+                    var coachmarkElementData = this.options.helpCoachmarksOptions.elements.showButtonElement;
+                    this.addHelpCoachmark(coachmarkElementData, this.$el.find('.medium-insert-buttons'));
+
                     if (activeAddon === 'images') {
                         this.$el.find('.medium-insert-buttons').attr('data-active-addon', activeAddon);
                     } else {
@@ -654,6 +690,10 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             if (hasPlaceholder) {
                 this.$el.focus();
             }
+
+            var coachmarkId = this.options.helpCoachmarksOptions.elements.showButtonElement.id;
+            var $currentCoachmarkElement = $el.find(`.medium-insert-buttons .medium-insert-help-coachmark[data-id="${coachmarkId}"]`);
+            this.removeHelpCoachmark(coachmarkId, $currentCoachmarkElement);
         }
     };
 
@@ -878,7 +918,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * Shows Action button tooltip
      * @param e
      */
-    Core.prototype.hoverInInsertActionButton = function(e) {
+    Core.prototype.hoverInInsertActionButton = function (e) {
         var $el = $(e.target).closest('.medium-insert-action');
         var tooltipClass = 'medium-insert-action-tooltip';
 
@@ -891,7 +931,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * Hides Action button tooltip
      * @param e
      */
-    Core.prototype.hoverOutInsertActionButton = function(e) {
+    Core.prototype.hoverOutInsertActionButton = function (e) {
         var $el = $(e.target).closest('.medium-insert-action');
         var tooltipClass = 'medium-insert-action-tooltip';
 
@@ -899,6 +939,122 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             $el.find(`.${tooltipClass}`).remove();
         }
     };
+
+    /**
+     * Appends Coachmark to certain element
+     * @param coachmarkElementData
+     * @param $wrapper
+     * @returns {boolean}
+     */
+    Core.prototype.addHelpCoachmark = function (coachmarkElementData, $wrapper, doReposition = false) {
+        var that = this;
+        var coachmarksOptions = this.options.helpCoachmarksOptions;
+        var coachmarkHelpers = coachmarksOptions.helpers;
+        var coachmarkId = coachmarkElementData.id;
+
+        if ($wrapper.length === 0 || !coachmarkHelpers) {
+            return false;
+        }
+
+        var currentCoachmarkElementSelector = `.medium-insert-help-coachmark[data-id="${coachmarkId}"]`;
+
+        // If coachmark id for certain wrapper element doesn't exist in local store then adds it
+        if (!coachmarkHelpers.checkOnExistence(coachmarkId) && $wrapper.find(currentCoachmarkElementSelector).length === 0) {
+            $wrapper.append(this.templates['src/js/templates/coachmark-block.hbs']({
+                id: coachmarkId,
+                title: coachmarkElementData.title,
+                content: coachmarkElementData.content,
+                buttonText: coachmarkElementData.buttonText,
+            }));
+
+            if (doReposition) {
+                this.repositionHelpCoachmark($wrapper.find(currentCoachmarkElementSelector));
+            }
+
+            $wrapper.find(currentCoachmarkElementSelector).fadeIn(500);
+
+            $wrapper.on('click', `.medium-insert-help-coachmark[data-id="${coachmarkId}"] button`, function () {
+                that.removeHelpCoachmark(coachmarkId, $wrapper.find(currentCoachmarkElementSelector));
+            });
+        }
+    };
+
+    /**
+     * Removes Coachmark from certain element (+ adds its ID to local store)
+     * @param $wrapper
+     */
+    Core.prototype.removeHelpCoachmark = function (id, $currentCoachmarkElement) {
+        var coachmarksOptions = this.options.helpCoachmarksOptions;
+        var coachmarkHelpers = coachmarksOptions.helpers;
+
+        if ($currentCoachmarkElement.length !== 0) {
+            $currentCoachmarkElement.fadeOut(500, function () {
+                $(this).remove();
+
+                if (!coachmarkHelpers.checkOnExistence(id)) {
+                    coachmarkHelpers.addCoachMarkId(id);
+                }
+            });
+        }
+    };
+
+    /**
+     * Checks whether to add or remove Coachmark to Editor's content element
+     * @param e
+     */
+    Core.prototype.checkEditorToolbarCoachmark = function(e) {
+        if (this.$el) {
+            var editorPureText = this.$el.find('p, h2, h3, blockquote').not($('.medium-insert-embeds > p')).text().trim();
+            var coachmarkElementData = this.options.helpCoachmarksOptions.elements.editorElement;
+            var coachmarkId = coachmarkElementData.id;
+            var currentCoachmarkElementSelector = `.medium-insert-help-coachmark[data-id="${coachmarkId}"]`;
+
+            if (Util.isKey(e, Util.keyCode.ENTER)) {
+                this.removeHelpCoachmark(coachmarkId, this.$el.find(currentCoachmarkElementSelector));
+                return;
+            }
+
+            // Processes Coachmark functionality
+            if (editorPureText.length > 20 && editorPureText.length < 30) {
+                this.addHelpCoachmark(coachmarkElementData, this.$el, true);
+            } else {
+                this.removeHelpCoachmark(coachmarkId, this.$el.find(currentCoachmarkElementSelector));
+            }
+        }
+    }
+
+    /**
+     * Repositions Coachmark element
+     */
+    Core.prototype.repositionHelpCoachmark = function ($currentCoachmarkElement) {
+        var $el,
+            selection = window.getSelection(),
+            that = this,
+            elementsContainer = this.getEditor() ? this.getEditor().options.elementsContainer : $('body').get(0),
+            elementsContainerAbsolute = (['absolute', 'fixed'].indexOf(window.getComputedStyle(elementsContainer).getPropertyValue('position'))) > -1,
+            position = {},
+            range, $current, $el;
+
+        if (!selection || selection.rangeCount === 0) {
+            $current = this.$el;
+        } else {
+            range = selection.getRangeAt(0);
+            $current = $(range.commonAncestorContainer);
+        }
+
+        $el = $current.closest('p, h2, h3, blockquote');
+
+        if ($el) {
+            position.left = 0;
+            position.top = $el.position().top + $el.height() + parseInt($el.css('margin-top'), 10) + 16;
+
+            if (elementsContainerAbsolute) {
+                position.top += elementsContainer.scrollTop;
+            }
+
+            $currentCoachmarkElement.css(position);
+        }
+    }
 
     /**
      * Async delay helper
@@ -1927,10 +2083,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             that.uploadAdd(this);
         });
 
-        (async() => {
-            await this.core._delayAsync();
-            $fileNew.click();
-        })();
+        $fileNew.click();
     };
 
     /**
