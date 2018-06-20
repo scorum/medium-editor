@@ -323,6 +323,9 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             $data.find('.medium-insert-buttons').remove();
             $data.find('.medium-insert-active').removeClass('medium-insert-active');
 
+            // Removes Captions placeholders
+            $data.find('figcaption.medium-insert-caption-placeholder').remove();
+
             // Restore original embed code from embed wrapper attribute value.
             $data.find('[data-embed-code]').each(function () {
                 var $this = $(this),
