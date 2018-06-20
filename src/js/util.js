@@ -1081,7 +1081,8 @@
 
         unwrap: function (el, doc) {
             var fragment = doc.createDocumentFragment(),
-                nodes = Array.prototype.slice.call(el.childNodes);
+                nodes = Array.prototype.slice.call(el.childNodes),
+                parentNode;
 
             // cast nodeList to array since appending child
             // to a different node will alter length of el.childNodes
@@ -1089,10 +1090,14 @@
                 fragment.appendChild(nodes[i]);
             }
 
-            if (fragment.childNodes.length) {
-                el.parentNode.replaceChild(fragment, el);
-            } else {
-                el.parentNode.removeChild(el);
+            parentNode = el.parentNode;
+
+            if (parentNode) {
+                if (fragment.childNodes.length) {
+                    parentNode.replaceChild(fragment, el);
+                } else {
+                    parentNode.removeChild(el);
+                }
             }
         },
 

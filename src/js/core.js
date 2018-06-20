@@ -771,6 +771,18 @@
                             for (var i = 0; i < mutation.addedNodes.length; i++) {
                                 addedNode = mutation.addedNodes[i];
 
+                                // If new line is inserted and last word of prev line is wrapped in `b`, `i' or `u` tags
+                                // then removes this kind of markup (tags) + adds `br` tag instaed
+                                // in order to set cursor in this new line
+                                if (targetNodeName == 'p' && ['b', 'i', 'u'].includes(addedNode.nodeName.toLowerCase())) {
+                                    var addedNodeParentEl = addedNode.closest('p');
+
+                                    if (addedNode.textContent.trim() === '' && addedNodeParentEl) {
+                                        addedNodeParentEl.innerHTML = '<br />';
+                                        addedNode.remove();
+                                    }
+                                }
+
                                 // Checks whether inserted node is a `span` (for all browsers)
                                 // or `paragraph` inside `blockquote` element (for all browsers except FF)
                                 // If true - then it should be unwraped

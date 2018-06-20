@@ -1102,7 +1102,8 @@ MediumEditor.extensions = {};
 
         unwrap: function (el, doc) {
             var fragment = doc.createDocumentFragment(),
-                nodes = Array.prototype.slice.call(el.childNodes);
+                nodes = Array.prototype.slice.call(el.childNodes),
+                parentNode;
 
             // cast nodeList to array since appending child
             // to a different node will alter length of el.childNodes
@@ -1110,10 +1111,14 @@ MediumEditor.extensions = {};
                 fragment.appendChild(nodes[i]);
             }
 
-            if (fragment.childNodes.length) {
-                el.parentNode.replaceChild(fragment, el);
-            } else {
-                el.parentNode.removeChild(el);
+            parentNode = el.parentNode;
+
+            if (parentNode) {
+                if (fragment.childNodes.length) {
+                    parentNode.replaceChild(fragment, el);
+                } else {
+                    parentNode.removeChild(el);
+                }
             }
         },
 
@@ -7079,6 +7084,18 @@ MediumEditor.extensions = {};
                             // Loop through all inserted nodes
                             for (var i = 0; i < mutation.addedNodes.length; i++) {
                                 addedNode = mutation.addedNodes[i];
+
+                                // If new line is inserted and last word of prev line is wrapped in `b`, `i' or `u` tags
+                                // then removes this kind of markup (tags) + adds `br` tag instaed
+                                // in order to set cursor in this new line
+                                if (targetNodeName == 'p' && ['b', 'i', 'u'].includes(addedNode.nodeName.toLowerCase())) {
+                                    var addedNodeParentEl = addedNode.closest('p');
+
+                                    if (addedNode.textContent.trim() === '' && addedNodeParentEl) {
+                                        addedNodeParentEl.innerHTML = '<br />';
+                                        addedNode.remove();
+                                    }
+                                }
 
                                 // Checks whether inserted node is a `span` (for all browsers)
                                 // or `paragraph` inside `blockquote` element (for all browsers except FF)
