@@ -5477,9 +5477,9 @@ MediumEditor.extensions = {};
     var Autolist = MediumEditor.Extension.extend({
         name: 'autolist',
         init: function () {
-            this.subscribe('editableInput', this.onInput.bind(this));
+            this.subscribe('editableKeyup', this.onKeyUp.bind(this));
         },
-        onInput: function () {
+        onKeyUp: function () {
             var listStart = this.base.getSelectedParentElement().textContent;
 
             if (/^1(\.|\))\s/.test(listStart)) {
