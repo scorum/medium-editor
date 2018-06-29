@@ -431,6 +431,15 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
         if (this.getEditor()) {
             this.getEditor().trigger('editableInput', null, this.el);
         }
+
+        // Because of RxJs `fromEvent` doesn't fire for Medium custom `editableInput` event,
+        // the following hack is used
+        var editorEls = document.getElementsByClassName('medium-editor-element');
+
+        if (editorEls.length !== 0) {
+            var editorEl = editorEls[0];
+            editorEl.dispatchEvent(new Event('input'));
+        }
     };
 
     /**
@@ -1277,6 +1286,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             $embeds.removeAttr('contenteditable');
             $embeds.find('figcaption').removeAttr('contenteditable');
             $data.find('.medium-insert-embeds-overlay').remove();
+            $data.find('.medium-insert-embeds-input').remove();
             $embeds.find('.medium-insert-embed').empty();
             $data.find('.medium-insert-embeds-selected').removeClass('medium-insert-embeds-selected');
 

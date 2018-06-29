@@ -178,6 +178,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             $embeds.removeAttr('contenteditable');
             $embeds.find('figcaption').removeAttr('contenteditable');
             $data.find('.medium-insert-embeds-overlay').remove();
+            $data.find('.medium-insert-embeds-input').remove();
             $embeds.find('.medium-insert-embed').empty();
             $data.find('.medium-insert-embeds-selected').removeClass('medium-insert-embeds-selected');
 

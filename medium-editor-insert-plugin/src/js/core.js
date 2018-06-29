@@ -247,6 +247,15 @@
         if (this.getEditor()) {
             this.getEditor().trigger('editableInput', null, this.el);
         }
+
+        // Because of RxJs `fromEvent` doesn't fire for Medium custom `editableInput` event,
+        // the following hack is used
+        var editorEls = document.getElementsByClassName('medium-editor-element');
+
+        if (editorEls.length !== 0) {
+            var editorEl = editorEls[0];
+            editorEl.dispatchEvent(new Event('input'));
+        }
     };
 
     /**
