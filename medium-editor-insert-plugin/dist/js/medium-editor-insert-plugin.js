@@ -209,6 +209,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
                 },
                 helpers: null,
             },
+            customEventsTypes: {},
             addons: {
                 images: true, // boolean or object containing configuration
                 videos: true,
@@ -240,6 +241,8 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
 
     function Core(el, options) {
         var editor;
+
+        console.log('===== options', options);
 
         this.el = el;
         this.$el = $(el);
@@ -422,7 +425,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
     };
 
     /**
-     * Trigger editableInput on editor
+     * Trigger editableInput (+ certain custom events) event on editor
      *
      * @return {void}
      */
@@ -430,15 +433,14 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
     Core.prototype.triggerInput = function () {
         if (this.getEditor()) {
             this.getEditor().trigger('editableInput', null, this.el);
-        }
 
-        // Because of RxJs `fromEvent` doesn't fire for Medium custom `editableInput` event,
-        // the following hack is used
-        var editorEls = document.getElementsByClassName('medium-editor-element');
+            // Triggers `draftUpsertEvent` event
+            // in order for RxJs Observable to handle it and runs draft upserting functionality
+            const draftUpsertEvent = this.options.customEventsTypes.draftUpsertEvent;
 
-        if (editorEls.length !== 0) {
-            var editorEl = editorEls[0];
-            editorEl.dispatchEvent(new Event('input'));
+            if (draftUpsertEvent) {
+                window.dispatchEvent(new Event(draftUpsertEvent));
+            }
         }
     };
 
