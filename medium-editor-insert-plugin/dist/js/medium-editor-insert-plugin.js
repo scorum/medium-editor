@@ -242,8 +242,6 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
     function Core(el, options) {
         var editor;
 
-        console.log('===== options', options);
-
         this.el = el;
         this.$el = $(el);
         this.templates = window.MediumInsert.Templates;

@@ -58,8 +58,6 @@
     function Core(el, options) {
         var editor;
 
-        console.log('===== options', options);
-
         this.el = el;
         this.$el = $(el);
         this.templates = window.MediumInsert.Templates;
