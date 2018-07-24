@@ -437,6 +437,12 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             }));
             $place.remove();
 
+            console.log('===== $place', $('.medium-insert-embeds-added').is(':first-child'));
+
+            if ($('.medium-insert-embeds-added').is(':first-child')) { // add empty paragraph before media block wrapper if it's a first chils in content
+                $('.medium-insert-embeds-added').before('<p><br></p>');
+            }
+
             $('.medium-insert-embeds-added').find('.medium-insert-embeds-overlay').trigger('click');
             $('.medium-insert-embeds-added').removeClass('medium-insert-embeds-added');
 
@@ -562,7 +568,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
                 $('.medium-insert-embeds-toolbar, .medium-insert-embeds-toolbar2').remove();
 
                 $empty = $(this.templates['src/js/templates/core-empty-line.hbs']().trim());
-                $embed.before($empty);
+                $embed.after($empty);
                 $embed.remove();
 
                 // Hide addons
