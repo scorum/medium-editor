@@ -134,7 +134,7 @@
             })
             .on('keyup click', $.proxy(this, 'toggleButtons'))
             .on('keydown', 'figcaption', $.proxy(this, 'checkCaptionBehavior'))
-            .on('keydown', $.proxy(this, 'checkMediaBlockWhileRemoving'))
+            .on('keydown', $.proxy(this, 'checkMediaBlockWhileLineRemoving'))
             .on('selectstart mousedown', '.medium-insert, .medium-insert-buttons', $.proxy(this, 'disableSelection'))
             .on('click', '.medium-insert-buttons-show', $.proxy(this, 'toggleAddons'))
             .on('click', '.medium-insert-action', $.proxy(this, 'addonAction'))
@@ -188,10 +188,22 @@
                 $this.html(html);
             });
 
-            var $firstParagraph = $data.find('p:first-child');
+            /*$data.find('p').each(function() {
+                var $this = $(this);
+                var $prevEl = $this.prev();
+                var $nextEl = $this.next('p');
 
+                if ($this.text().length === 0 &&
+                    ($prevEl.length === 0 || ($nextEl.length !== 0 && $nextEl.text() === '')))
+                {
+                    $this.remove();
+                }
+            });*/
 
-            if ($firstParagraph.length !== 0 && $firstParagraph.text() === '') {
+            // Removes first empty paragraph
+            var $firstParagraph = $data.find('p').first();
+
+            if ($firstParagraph.length !== 0 && $firstParagraph.prev().length === 0 && $firstParagraph.text().trim() === '') {
                 $firstParagraph.remove();
             }
 
@@ -895,7 +907,7 @@
 
             $currentCoachmarkElement.css(position);
         }
-    }
+    };
 
     /**
      * Moves active media block (image or embed object) to the next line when `ENTER` key is pressed
@@ -903,7 +915,6 @@
      */
     Core.prototype.moveMediaBlockToNextLine = function (e) {
         var $parentEl,
-            $selectedEl,
             $selectedEl = this.$el.find('.medium-insert-image-active, .medium-insert-embeds-selected');
 
         if ($selectedEl.length !== 0 && Util.isKey(e, Util.keyCode.ENTER)) {
@@ -913,7 +924,7 @@
             $selectedEl = $selectedEl.eq(0);
             $parentEl = $selectedEl.closest('.medium-insert-images, .medium-insert-embeds');
 
-            $parentEl.before('<p><br></p>');
+            $parentEl.before('<p> <br></p>');
 
             this.moveCaret($parentEl.prev());
             $parentEl.prev().click();
@@ -921,22 +932,22 @@
 
             return;
         }
-    }
+    };
 
     /**
-     *
+     * Handles line deleting process, checking the neighboring media elements
      * @param e
      */
-    Core.prototype.checkMediaBlockWhileRemoving = function (e) {
+    Core.prototype.checkMediaBlockWhileLineRemoving = function (e) {
         var $prevEl,
             $nextEl,
             $mediaEls,
+            that = this,
+            handleDeletingFunc,
             $currentEl = $(Selection.getSelectionStart(document));
 
         if ($currentEl.length !== 0 && Util.isKey(e, Util.keyCode.BACKSPACE)) {
             $currentEl = $(Selection.getSelectionStart(document));
-
-            console.log('===== $currentEl BEFORE', $currentEl);
 
             if (!$currentEl.is('p, h2, h3, blockquote')) {
                 $currentEl = $currentEl.closest('p, h2, h3, blockquote');
@@ -945,49 +956,31 @@
             $prevEl = $currentEl.prev('.medium-insert-images, .medium-insert-embeds');
             $nextEl = $currentEl.next('.medium-insert-images, .medium-insert-embeds');
 
-            console.log('===== $currentEl', $currentEl);
-            console.log('===== $currentEl.closest', $currentEl.closest('p'));
-            console.log('===== $currentEl.text', $currentEl.text());
-            console.log('===== prev', $prevEl);
-            console.log('===== next', $nextEl);
-
-            if ($prevEl.length !== 0 && $currentEl.text() === '') {
-                console.log('===== 77777');
-
+            handleDeletingFunc = function ($targetMediaEl) {
                 $currentEl.remove();
                 e.preventDefault();
                 e.stopPropagation();
 
-                $mediaEls = $prevEl.find('img, .medium-insert-embeds-overlay');
+                $mediaEls = $targetMediaEl.find('img, .medium-insert-embeds-overlay');
 
                 if ($mediaEls.length !== 0) {
-                    console.log('===== sometest12345', $mediaEls.eq(0));
                     $mediaEls.eq(0).click();
                 }
 
-                this.triggerInput();
+                that.triggerInput();
+            };
 
+            if ($prevEl.length !== 0 && $currentEl.text().trim() === '') {
+                handleDeletingFunc($prevEl);
                 return;
             }
 
-            console.log('===== $currentEl.prev()', $currentEl.prevAll());
-            console.log('===== $currentEl.is(\':first-child\')', $currentEl.is(':first-child'));
-            console.log('===== $currentEl.text().trim() === \'\'', $currentEl.text().trim() === '');
-            console.log('===== $nextEl.length !== 0', $nextEl.length !== 0);
-
             if ($currentEl.is(':first-child') && $nextEl.length !== 0 && $currentEl.text().trim() === '') {
-                console.log('===== 00000');
-
-                $currentEl.remove();
-                e.preventDefault();
-                e.stopPropagation();
-
-                this.triggerInput();
-
+                handleDeletingFunc($nextEl);
                 return;
             }
         }
-    }
+    };
 
     /**
      * Async delay helper
