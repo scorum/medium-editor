@@ -264,11 +264,18 @@
                 if ($place.is('p')) {
                     $place.replaceWith('<div class="medium-insert-active">' + $place.html() + '</div>');
                     $place = that.$el.find('.medium-insert-active');
+
                     if ($place.next().is('p')) {
                         that.core.moveCaret($place.next());
                     } else {
-                        $place.after('<p><br></p>'); // add empty paragraph so we can move the caret to the next line.
-                        that.core.moveCaret($place.next());
+                        if (!$place.next().is('.medium-insert-images, .medium-insert-embeds')) {
+                            $place.after('<p><br></p>'); // add empty paragraph so we can move the caret to the next line.
+                            that.core.moveCaret($place.next());
+                        }
+                    }
+
+                    if ($place.is(':first-child')) { // add empty paragraph before media block wrapper if it's a first chils in content
+                        $place.before('<p><br></p>');
                     }
                 }
 

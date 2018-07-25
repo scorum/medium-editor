@@ -182,7 +182,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
     + "    </ul>\n</div>\n\n"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.actions : depth0),{"name":"if","hash":{},"fn":container.program(4, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "");
 },"useData":true});
-;(function ($, window, document, Util, undefined) {
+;(function ($, window, document, Util, Selection, undefined) {
 
     'use strict';
 
@@ -318,6 +318,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             })
             .on('keyup click', $.proxy(this, 'toggleButtons'))
             .on('keydown', 'figcaption', $.proxy(this, 'checkCaptionBehavior'))
+            .on('keydown', $.proxy(this, 'checkMediaBlockWhileLineRemoving'))
             .on('selectstart mousedown', '.medium-insert, .medium-insert-buttons', $.proxy(this, 'disableSelection'))
             .on('click', '.medium-insert-buttons-show', $.proxy(this, 'toggleAddons'))
             .on('click', '.medium-insert-action', $.proxy(this, 'addonAction'))
@@ -327,6 +328,8 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             .on('mouseenter', '.medium-insert-action', $.proxy(this, 'hoverInInsertActionButton'))
             .on('mouseleave', '.medium-insert-action', $.proxy(this, 'hoverOutInsertActionButton'))
             .on('keydown', $.proxy(this, 'checkEditorToolbarCoachmark'));
+
+        $(document).on('keydown', $.proxy(this, 'moveMediaBlockToNextLine'));
 
         $(window).on('resize', $.proxy(this, 'positionButtons', null));
     };
@@ -368,6 +371,25 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
                     html = $('<div />').html($this.attr('data-embed-code')).text();
                 $this.html(html);
             });
+
+            /*$data.find('p').each(function() {
+                var $this = $(this);
+                var $prevEl = $this.prev();
+                var $nextEl = $this.next('p');
+
+                if ($this.text().length === 0 &&
+                    ($prevEl.length === 0 || ($nextEl.length !== 0 && $nextEl.text() === '')))
+                {
+                    $this.remove();
+                }
+            });*/
+
+            // Removes first empty paragraph
+            var $firstParagraph = $data.find('p').first();
+
+            if ($firstParagraph.length !== 0 && $firstParagraph.prev().length === 0 && $firstParagraph.text().trim() === '') {
+                $firstParagraph.remove();
+            }
 
             data[key].value = $data.html();
         });
@@ -1069,7 +1091,80 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
 
             $currentCoachmarkElement.css(position);
         }
-    }
+    };
+
+    /**
+     * Moves active media block (image or embed object) to the next line when `ENTER` key is pressed
+     * @param e
+     */
+    Core.prototype.moveMediaBlockToNextLine = function (e) {
+        var $parentEl,
+            $selectedEl = this.$el.find('.medium-insert-image-active, .medium-insert-embeds-selected');
+
+        if ($selectedEl.length !== 0 && Util.isKey(e, Util.keyCode.ENTER)) {
+
+            e.preventDefault();
+
+            $selectedEl = $selectedEl.eq(0);
+            $parentEl = $selectedEl.closest('.medium-insert-images, .medium-insert-embeds');
+
+            $parentEl.before('<p> <br></p>');
+
+            this.moveCaret($parentEl.prev());
+            $parentEl.prev().click();
+            this.triggerInput();
+
+            return;
+        }
+    };
+
+    /**
+     * Handles line deleting process, checking the neighboring media elements
+     * @param e
+     */
+    Core.prototype.checkMediaBlockWhileLineRemoving = function (e) {
+        var $prevEl,
+            $nextEl,
+            $mediaEls,
+            that = this,
+            handleDeletingFunc,
+            $currentEl = $(Selection.getSelectionStart(document));
+
+        if ($currentEl.length !== 0 && Util.isKey(e, Util.keyCode.BACKSPACE)) {
+            $currentEl = $(Selection.getSelectionStart(document));
+
+            if (!$currentEl.is('p, h2, h3, blockquote')) {
+                $currentEl = $currentEl.closest('p, h2, h3, blockquote');
+            }
+
+            $prevEl = $currentEl.prev('.medium-insert-images, .medium-insert-embeds');
+            $nextEl = $currentEl.next('.medium-insert-images, .medium-insert-embeds');
+
+            handleDeletingFunc = function ($targetMediaEl) {
+                $currentEl.remove();
+                e.preventDefault();
+                e.stopPropagation();
+
+                $mediaEls = $targetMediaEl.find('img, .medium-insert-embeds-overlay');
+
+                if ($mediaEls.length !== 0) {
+                    $mediaEls.eq(0).click();
+                }
+
+                that.triggerInput();
+            };
+
+            if ($prevEl.length !== 0 && $currentEl.text().trim() === '') {
+                handleDeletingFunc($prevEl);
+                return;
+            }
+
+            if ($currentEl.is(':first-child') && $nextEl.length !== 0 && $currentEl.text().trim() === '') {
+                handleDeletingFunc($nextEl);
+                return;
+            }
+        }
+    };
 
     /**
      * Async delay helper
@@ -1108,7 +1203,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
         });
     };
 
-})(jQuery, window, document, MediumEditor.util);
+})(jQuery, window, document, MediumEditor.util, MediumEditor.selection);
 /**
  * Gets common CommonEmbedsAddon Addon constructor
  * @param pluginName
@@ -1548,6 +1643,12 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             }));
             $place.remove();
 
+            console.log('===== $place', $('.medium-insert-embeds-added').is(':first-child'));
+
+            if ($('.medium-insert-embeds-added').is(':first-child')) { // add empty paragraph before media block wrapper if it's a first chils in content
+                $('.medium-insert-embeds-added').before('<p><br></p>');
+            }
+
             $('.medium-insert-embeds-added').find('.medium-insert-embeds-overlay').trigger('click');
             $('.medium-insert-embeds-added').removeClass('medium-insert-embeds-added');
 
@@ -1673,7 +1774,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
                 $('.medium-insert-embeds-toolbar, .medium-insert-embeds-toolbar2').remove();
 
                 $empty = $(this.templates['src/js/templates/core-empty-line.hbs']().trim());
-                $embed.before($empty);
+                $embed.after($empty);
                 $embed.remove();
 
                 // Hide addons
@@ -2151,11 +2252,18 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
                 if ($place.is('p')) {
                     $place.replaceWith('<div class="medium-insert-active">' + $place.html() + '</div>');
                     $place = that.$el.find('.medium-insert-active');
+
                     if ($place.next().is('p')) {
                         that.core.moveCaret($place.next());
                     } else {
-                        $place.after('<p><br></p>'); // add empty paragraph so we can move the caret to the next line.
-                        that.core.moveCaret($place.next());
+                        if (!$place.next().is('.medium-insert-images, .medium-insert-embeds')) {
+                            $place.after('<p><br></p>'); // add empty paragraph so we can move the caret to the next line.
+                            that.core.moveCaret($place.next());
+                        }
+                    }
+
+                    if ($place.is(':first-child')) { // add empty paragraph before media block wrapper if it's a first chils in content
+                        $place.before('<p><br></p>');
                     }
                 }
 

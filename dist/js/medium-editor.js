@@ -6368,7 +6368,7 @@ MediumEditor.extensions = {};
     function handleBlockDeleteKeydowns(event) {
         var p, node = MediumEditor.selection.getSelectionStart(this.options.ownerDocument),
             tagName = node.nodeName.toLowerCase(),
-            isEmpty = /^(\s+|<br\/?>)?$/i,
+            isEmpty = /^(\s+|<br.*\/?>)?$/i,
             isHeader = /h\d/i;
 
         if (MediumEditor.util.isKey(event, [MediumEditor.util.keyCode.BACKSPACE, MediumEditor.util.keyCode.ENTER]) &&
@@ -6418,17 +6418,12 @@ MediumEditor.extensions = {};
             // hitting backspace inside an empty li
             isEmpty.test(node.innerHTML) &&
             // is first element (no preceeding siblings)
-            !node.previousElementSibling &&
-            // parent also does not have a sibling
-            !node.parentElement.previousElementSibling &&
-            // is not the only li in a list
-            node.nextElementSibling &&
-            node.nextElementSibling.nodeName.toLowerCase() === 'li') {
+            !node.previousElementSibling) {
             // backspacing in an empty first list element in the first list (with more elements) ex:
-            //  <ul><li>[CURSOR]</li><li>List Item 2</li></ul>
+            //  <ul><li>[CURSOR]</li>(<li>List Item 2</li>)</ul>
             // will remove the first <li> but add some extra element before (varies based on browser)
             // Instead, this will:
-            // 1) remove the list element
+            // 1) remove the list element OR remove list if there is the only one element
             // 2) create a paragraph before the list
             // 3) move the cursor into the paragraph
 
@@ -6440,8 +6435,13 @@ MediumEditor.extensions = {};
             // move the cursor into the new paragraph
             MediumEditor.selection.moveCursor(this.options.ownerDocument, p);
 
-            // remove the list element
-            node.parentElement.removeChild(node);
+            if (!node.nextElementSibling) {
+                // removes list
+                node.parentElement.remove();
+            } else {
+                // remove the list element
+                node.parentElement.removeChild(node);
+            }
 
             event.preventDefault();
         } else if (MediumEditor.util.isKey(event, MediumEditor.util.keyCode.BACKSPACE) &&
@@ -6479,20 +6479,26 @@ MediumEditor.extensions = {};
             MediumEditor.selection.moveCursor(this.options.ownerDocument, p);
 
             event.preventDefault();
-        } else if (MediumEditor.util.isKey(event, MediumEditor.util.keyCode.BACKSPACE) &&
-            MediumEditor.util.isMediumEditorElement(node.parentElement) &&
-            !node.previousElementSibling &&
-            node.nextElementSibling &&
-            isEmpty.test(node.innerHTML)) {
+        } else if (MediumEditor.util.isKey(event, MediumEditor.util.keyCode.BACKSPACE)) {
 
-            // when cursor is in the first element, it's empty and user presses backspace,
-            // create <p><br></p> block
-            p = this.options.ownerDocument.createElement('p');
-            p.innerHTML = '<br>';
-            node.parentElement.insertBefore(p, node.nextSibling);
+            if (!MediumEditor.util.isBlockContainer(node)) {
+                node = MediumEditor.util.getClosestBlockContainer(node);
+            }
 
-            // move the cursor into the new paragraph
-            MediumEditor.selection.moveCursor(this.options.ownerDocument, p);
+            if (MediumEditor.util.isMediumEditorElement(node.parentElement) &&
+                !node.previousElementSibling &&
+                (!node.nextElementSibling || (node.nextElementSibling && node.nextElementSibling.className === 'medium-insert-buttons')) &&
+                isEmpty.test(node.innerHTML.trim()))
+            {
+                // when cursor is in the first element, it's empty and user presses backspace,
+                // create <p><br></p> block
+                p = this.options.ownerDocument.createElement('p');
+                p.innerHTML = '<br>';
+                node.parentElement.insertBefore(p, node.nextSibling);
+
+                // move the cursor into the new paragraph
+                MediumEditor.selection.moveCursor(this.options.ownerDocument, p);
+            }
         }
     }
 
