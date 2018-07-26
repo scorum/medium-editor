@@ -226,6 +226,9 @@
             }
         });
 
+        $('.medium-insert-images-toolbar, .medium-insert-images-toolbar2').off().remove();
+        $('.medium-insert-embeds-toolbar, .medium-insert-embeds-toolbar2').off().remove();
+
         this._destroy();
     };
 
