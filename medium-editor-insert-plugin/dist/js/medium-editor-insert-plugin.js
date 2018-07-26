@@ -410,6 +410,9 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             }
         });
 
+        $('.medium-insert-images-toolbar, .medium-insert-images-toolbar2').off().remove();
+        $('.medium-insert-embeds-toolbar, .medium-insert-embeds-toolbar2').off().remove();
+
         this._destroy();
     };
 
@@ -1642,8 +1645,6 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
                 url: pastedUrl
             }));
             $place.remove();
-
-            console.log('===== $place', $('.medium-insert-embeds-added').is(':first-child'));
 
             if ($('.medium-insert-embeds-added').is(':first-child')) { // add empty paragraph before media block wrapper if it's a first chils in content
                 $('.medium-insert-embeds-added').before('<p><br></p>');
