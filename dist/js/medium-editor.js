@@ -3772,6 +3772,10 @@ MediumEditor.extensions = {};
         },
 
         showPreview: function (anchorEl) {
+            if (document.querySelector('.medium-editor-element[data-medium-editor-is-disabled]')) {
+                return false;
+            }
+
             if (this.anchorPreview.classList.contains('medium-editor-anchor-preview-active') ||
                     anchorEl.getAttribute('data-disable-preview')) {
                 return true;
@@ -5794,6 +5798,10 @@ MediumEditor.extensions = {};
         },
 
         showToolbar: function () {
+            if (document.querySelector('.medium-editor-element[data-medium-editor-is-disabled]')) {
+                return false;
+            }
+
             clearTimeout(this.hideTimeout);
             if (!this.isDisplayed()) {
                 this.getToolbarElement().classList.add('medium-editor-toolbar-active');
