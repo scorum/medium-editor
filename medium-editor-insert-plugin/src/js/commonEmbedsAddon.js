@@ -1,11 +1,3 @@
-/**
- * Gets common CommonEmbedsAddon Addon constructor
- * @param pluginName
- * @param addonName
- * @param $ - `jQuery` object
- * @param window - `window` object
- * @param document - `document` object
- */
 function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
     pluginName = pluginName || 'mediumInsert';
 
@@ -496,6 +488,10 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         var that = this,
             $embed;
         if (this.core.options.enabled) {
+            if (this.$el.attr('data-medium-editor-is-disabled')) {
+                return;
+            }
+
             $embed = $(e.target).hasClass('medium-insert-embeds') ? $(e.target) : $(e.target).closest('.medium-insert-embeds');
 
             $embed.addClass('medium-insert-embeds-selected');

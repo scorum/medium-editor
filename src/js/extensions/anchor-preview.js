@@ -78,6 +78,10 @@
         },
 
         showPreview: function (anchorEl) {
+            if (document.querySelector('.medium-editor-element[data-medium-editor-is-disabled]')) {
+                return false;
+            }
+
             if (this.anchorPreview.classList.contains('medium-editor-anchor-preview-active') ||
                     anchorEl.getAttribute('data-disable-preview')) {
                 return true;

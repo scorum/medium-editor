@@ -210,6 +210,10 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
                 helpers: null,
             },
             customEventsTypes: {},
+            maxBodySizeLimitData: {
+                value: null,
+                callback: function () {},
+            },
             addons: {
                 images: true, // boolean or object containing configuration
                 videos: true,
@@ -310,12 +314,14 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      */
 
     Core.prototype.events = function () {
-        var that = this;
+        var that = this,
+            eventTypes = this.options.customEventsTypes;
 
         this.$el
             .on('dragover drop', function (e) {
                 e.preventDefault();
             })
+            .on('keydown', $.proxy(this, 'checkEditorDisableAttr'))
             .on('keyup click', $.proxy(this, 'toggleButtons'))
             .on('keydown', 'figcaption', $.proxy(this, 'checkCaptionBehavior'))
             .on('keydown', $.proxy(this, 'checkMediaBlockWhileLineRemoving'))
@@ -327,7 +333,8 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             })
             .on('mouseenter', '.medium-insert-action', $.proxy(this, 'hoverInInsertActionButton'))
             .on('mouseleave', '.medium-insert-action', $.proxy(this, 'hoverOutInsertActionButton'))
-            .on('keydown', $.proxy(this, 'checkEditorToolbarCoachmark'));
+            .on('keydown', $.proxy(this, 'checkEditorToolbarCoachmark'))
+            .on('input ' + eventTypes.customInputEvent, $.proxy(this, 'checkEditorContentMaxSize'));
 
         $(document).on('keydown', $.proxy(this, 'moveMediaBlockToNextLine'));
 
@@ -412,6 +419,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
 
         $('.medium-insert-images-toolbar, .medium-insert-images-toolbar2').off().remove();
         $('.medium-insert-embeds-toolbar, .medium-insert-embeds-toolbar2').off().remove();
+        $('.medium-editor-toolbar-small-wrapper').off().remove();
 
         this._destroy();
     };
@@ -460,9 +468,18 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
         if (this.getEditor()) {
             this.getEditor().trigger('editableInput', null, this.el);
 
+            var eventsTypes = this.options.customEventsTypes;
+
+            // Triggers `customInputEvent` event
+            const customInputEvent = eventsTypes.customInputEvent;
+
+            if (customInputEvent) {
+                this.$el.trigger(customInputEvent);
+            }
+
             // Triggers `draftUpsertEvent` event
             // in order for RxJs Observable to handle it and runs draft upserting functionality
-            const draftUpsertEvent = this.options.customEventsTypes.draftUpsertEvent;
+            const draftUpsertEvent = eventsTypes.draftUpsertEvent;
 
             if (draftUpsertEvent) {
                 window.dispatchEvent(new Event(draftUpsertEvent));
@@ -515,6 +532,21 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
 
         if ($el.is('img') === false || $el.hasClass('medium-insert-buttons-show')) {
             e.preventDefault();
+        }
+    };
+
+    /**
+     * Check whether the editor block is disabled
+     * @param e
+     */
+    Core.prototype.checkEditorDisableAttr = function (e) {
+        if (this.$el.attr('data-medium-editor-is-disabled')
+            && !Util.isKey(e, [Util.keyCode.BACKSPACE, Util.keyCode.DELETE]))
+        {
+            e.stopPropagation();
+            e.preventDefault();
+
+            return;
         }
     };
 
@@ -629,6 +661,14 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             range, $current, $p, activeAddon;
 
         if (this.options.enabled === false) {
+            return;
+        }
+
+        if (this.$el.attr('data-medium-editor-is-disabled')) {
+            this.$el.find('.medium-insert-buttons').hide();
+            this.$el.find('.medium-insert-buttons-addons').hide();
+            this.$el.find('.medium-insert-buttons-show').removeClass('medium-insert-buttons-rotate');
+            this.$el.removeClass('medium-insert-buttons-active');
             return;
         }
 
@@ -1061,7 +1101,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
                 this.removeHelpCoachmark(coachmarkId, this.$el.find(currentCoachmarkElementSelector));
             }
         }
-    }
+    };
 
     /**
      * Repositions Coachmark element
@@ -1095,6 +1135,39 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             $currentCoachmarkElement.css(position);
         }
     };
+
+    /**
+     * Checks whether the content length is more than limit.
+     * @param e
+     */
+    Core.prototype.checkEditorContentMaxSize = function (e) {
+        var maxBodySizeLimitData = this.options.maxBodySizeLimitData;
+        var limitLength = maxBodySizeLimitData.value;
+        var maxBodySizeCallback = maxBodySizeLimitData.callback;
+        var contentCurrentLength = this.$el.attr('data-medium-editor-length');
+
+        if (contentCurrentLength > limitLength) {
+            if (!this.$el.attr('data-medium-editor-is-disabled')) {
+                this.$el.attr('data-medium-editor-is-disabled', true);
+            }
+
+            if (this.$el.find('.medium-insert-image-active').length !== 0
+                || this.$el.find('.medium-insert-embeds-selected').length !== 0)
+            {
+                var $firstBlock = this.$el.find('p').first();
+
+                if ($firstBlock.length !== 0) {
+                    $firstBlock.click();
+                }
+            }
+
+            maxBodySizeCallback();
+        } else {
+            if (this.$el.attr('data-medium-editor-is-disabled')) {
+                this.$el.removeAttr('data-medium-editor-is-disabled');
+            }
+        }
+    }
 
     /**
      * Moves active media block (image or embed object) to the next line when `ENTER` key is pressed
@@ -1207,14 +1280,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
     };
 
 })(jQuery, window, document, MediumEditor.util, MediumEditor.selection);
-/**
- * Gets common CommonEmbedsAddon Addon constructor
- * @param pluginName
- * @param addonName
- * @param $ - `jQuery` object
- * @param window - `window` object
- * @param document - `document` object
- */
+
 function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
     pluginName = pluginName || 'mediumInsert';
 
@@ -1705,6 +1771,10 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         var that = this,
             $embed;
         if (this.core.options.enabled) {
+            if (this.$el.attr('data-medium-editor-is-disabled')) {
+                return;
+            }
+
             $embed = $(e.target).hasClass('medium-insert-embeds') ? $(e.target) : $(e.target).closest('.medium-insert-embeds');
 
             $embed.addClass('medium-insert-embeds-selected');
@@ -2484,6 +2554,10 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             $image;
 
         if (this.core.options.enabled) {
+            if (this.$el.attr('data-medium-editor-is-disabled')) {
+                return;
+            }
+
             $image = $(e.target);
 
             if ($image.hasClass('medium-insert-image-active')) {

@@ -295,6 +295,10 @@
         },
 
         showToolbar: function () {
+            if (document.querySelector('.medium-editor-element[data-medium-editor-is-disabled]')) {
+                return false;
+            }
+
             clearTimeout(this.hideTimeout);
             if (!this.isDisplayed()) {
                 this.getToolbarElement().classList.add('medium-editor-toolbar-active');

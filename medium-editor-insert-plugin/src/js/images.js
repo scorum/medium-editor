@@ -495,6 +495,10 @@
             $image;
 
         if (this.core.options.enabled) {
+            if (this.$el.attr('data-medium-editor-is-disabled')) {
+                return;
+            }
+
             $image = $(e.target);
 
             if ($image.hasClass('medium-insert-image-active')) {
