@@ -87,11 +87,6 @@
 
 .medium-insert-images {
   margin: 1em 0; }
-  .medium-insert-images .dragged {
-    position: absolute;
-    top: 0;
-    opacity: .5;
-    z-index: 2000; }
   .medium-insert-images .placeholder {
     position: relative;
     margin: 0;
