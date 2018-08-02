@@ -176,6 +176,10 @@
                 return;
             }
 
+            if (document.querySelector('.medium-editor-element[data-medium-editor-is-disabled]')) {
+                return false;
+            }
+
             var clipboardContent = getClipboardContent(event, this.window, this.document),
                 pastedHTML = clipboardContent['text/html'],
                 pastedPlain = clipboardContent['text/plain'];
@@ -280,6 +284,10 @@
             // if it's not Ctrl+V, do nothing
             if (!(MediumEditor.util.isKey(event, MediumEditor.util.keyCode.V) && MediumEditor.util.isMetaCtrlKey(event))) {
                 return;
+            }
+
+            if (document.querySelector('.medium-editor-element[data-medium-editor-is-disabled]')) {
+                return false;
             }
 
             event.stopImmediatePropagation();

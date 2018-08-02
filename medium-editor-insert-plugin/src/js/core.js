@@ -134,10 +134,10 @@
             eventTypes = this.options.customEventsTypes;
 
         this.$el
-            .on('dragover drop', function (e) {
+            .on('dragover dragenter dragleave drop', function (e) {
                 e.preventDefault();
             })
-            .on('keydown', $.proxy(this, 'checkEditorDisableAttr'))
+            .on('keydown paste', $.proxy(this, 'checkEditorDisableAttr'))
             .on('keyup click', $.proxy(this, 'toggleButtons'))
             .on('keydown', 'figcaption', $.proxy(this, 'checkCaptionBehavior'))
             .on('keydown', $.proxy(this, 'checkMediaBlockWhileLineRemoving'))
@@ -357,12 +357,12 @@
      */
     Core.prototype.checkEditorDisableAttr = function (e) {
         if (this.$el.attr('data-medium-editor-is-disabled')
-            && !Util.isKey(e, [Util.keyCode.BACKSPACE, Util.keyCode.DELETE]))
-        {
+            // 37, 38, 39, 40 - keyboard arrows keys codes
+            && (!Util.isKey(e, [Util.keyCode.BACKSPACE, Util.keyCode.DELETE, 37, 38, 39, 40]) || e.type === 'paste')) {
             e.stopPropagation();
             e.preventDefault();
 
-            return;
+            return false;
         }
     };
 
@@ -1036,6 +1036,8 @@
                 $currentEl.remove();
                 e.preventDefault();
                 e.stopPropagation();
+
+                that.$el.blur();
 
                 $mediaEls = $targetMediaEl.find('img, .medium-insert-embeds-overlay');
 
