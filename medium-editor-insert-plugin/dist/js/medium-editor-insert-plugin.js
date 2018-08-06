@@ -679,6 +679,15 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             $current = $(range.commonAncestorContainer);
         }
 
+        if (($current.is('h2') || $current.is('h3')) && $current.text().length === 0) {
+            $current.before('<p> <br></p>');
+            this.moveCaret($current.prev());
+            $current.prev().click();
+            $current.remove();
+
+            return false;
+        }
+
         // When user clicks on  editor's placeholder in FF, $current el is editor itself, not the first paragraph as it should
         if ($current.hasClass('medium-editor-insert-plugin')) {
             $current = $current.find('p:first');
@@ -821,7 +830,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             return;
         }
 
-        this.$el.find('.medium-insert-buttons-addons').fadeToggle();
+        this.$el.find('.medium-insert-buttons-addons').fadeToggle(200);
         this.$el.find('.medium-insert-buttons-show').toggleClass('medium-insert-buttons-rotate');
 
         if (this.$el) {
