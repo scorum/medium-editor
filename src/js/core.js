@@ -752,6 +752,7 @@
                 mutationObserverInstance,
                 targetNode,
                 targetNodeName,
+                targetNodeNames = ['p', 'blockquote', 'h2', 'h3'],
                 addedNode,
                 instance = this;
 
@@ -770,17 +771,17 @@
                         targetNode = mutation.target;
                         targetNodeName = targetNode.nodeName.toLowerCase();
 
-                        // Checks whether mutation had place in `paragrapgh` or `blockquote` elements
-                        if (targetNodeName === 'p' || targetNodeName === 'blockquote') {
+                        // Checks whether mutation had place in certain elements
+                        if (targetNodeNames.includes(targetNodeName)) {
 
                             // Loop through all inserted nodes
                             for (var i = 0; i < mutation.addedNodes.length; i++) {
                                 addedNode = mutation.addedNodes[i];
 
-                                // If new line is inserted and last word of prev line is wrapped in `b`, `i' or `u` tags
-                                // then removes this kind of markup (tags) + adds `br` tag instaed
-                                // in order to set cursor in this new line
-                                if (targetNodeName == 'p' && ['b', 'i', 'u'].includes(addedNode.nodeName.toLowerCase())) {
+                                // If new line is inserted and last word of prev line is wrapped
+                                // in `b`, `i`, `u` or `strike` tags then removes this kind of markup (tags)
+                                // + adds `br` tag instead in order to set cursor in this new line
+                                if (targetNodeName == 'p' && ['b', 'i', 'u', 'strike'].includes(addedNode.nodeName.toLowerCase())) {
                                     var addedNodeParentEl = addedNode.closest('p');
 
                                     if (addedNode.textContent.trim() === '' && addedNodeParentEl) {
@@ -808,6 +809,15 @@
                                     && targetNode.firstChild.nodeName.toLowerCase() === 'br'))
                                 {
                                     MediumEditor.util.unwrap(targetNode.firstChild, instance.options.ownerDocument);
+                                }
+
+                                // Checks whether inserted node is one of the certain elements
+                                // and it was added to `h2` or `h3` target nodes
+                                // If true - then it should be unwraped
+                                if (['h2', 'h3'].includes(targetNodeName)
+                                    && ['h2', 'h3', 'p', 'blockquote', 'b', 'i', 'u', 'strike'].includes(addedNode.nodeName.toLowerCase()))
+                                {
+                                    MediumEditor.util.unwrap(addedNode, instance.options.ownerDocument);
                                 }
                             }
                         }
