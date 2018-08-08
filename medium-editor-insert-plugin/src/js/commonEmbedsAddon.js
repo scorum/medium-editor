@@ -488,15 +488,15 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         var that = this,
             $embed;
         if (this.core.options.enabled) {
-            if (this.$el.attr('data-medium-editor-is-disabled')) {
-                return;
-            }
-
             $embed = $(e.target).hasClass('medium-insert-embeds') ? $(e.target) : $(e.target).closest('.medium-insert-embeds');
 
             $embed.addClass('medium-insert-embeds-selected');
 
             setTimeout(function () {
+                if (this.$el.attr('data-medium-editor-is-disabled')) {
+                    return;
+                }
+
                 that.addToolbar();
 
                 if (that.options.captions) {

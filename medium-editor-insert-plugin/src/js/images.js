@@ -15,7 +15,6 @@
             // uploadCompleted: function () {},
             uploadCustomCallback: function () {},
             uploadData: {},
-            // errorCustomCallback: function () {},
             generateMediaUniqueIdCallback: function () {}, // required
             getImageSuitableSizeCallback: function () {}, // required
             getUploadedImageCustomCallback: function () {}, // required
@@ -74,12 +73,6 @@
                         that.core.triggerInput();
                     }
                 });
-            },
-            messages: {
-                acceptFileTypesError: 'This file is not in a supported format: ',
-                maxFileSizeError: 'This file is too big: ',
-                uploadError: 'An error occurred while uploading image',
-                minImageSizeError: 'Image is too small, min size is 200x200',
             },
         };
 
@@ -223,26 +216,27 @@
         var $place = this.$el.find('.medium-insert-active'),
             that = this,
             uploadErrors = false,
-            uploadErrorMessage = '',
             file = data.files[0],
             acceptFileTypes = this.options.acceptFileTypes,
             maxFileSize = this.options.maxFileSize,
             minImageSize = this.options.minImageSize,
             reader,
-            mediaId = this.options.generateMediaUniqueIdCallback();
+            mediaId = this.options.generateMediaUniqueIdCallback(),
+            errorNotificationCallback = this.core.options.errorNotificationCallback,
+            errorNotificationId;
 
         if (acceptFileTypes && !acceptFileTypes.test(file.type)) {
             uploadErrors = true;
-            uploadErrorMessage = this.options.messages.acceptFileTypesError;
+            errorNotificationId = this.core.options.notificationIds.imageUnsupportedFileTypesErrorId;
         } else if (maxFileSize && file.size > maxFileSize) {
             uploadErrors = true;
-            uploadErrorMessage = this.options.messages.maxFileSizeError;
+            errorNotificationId = this.core.options.notificationIds.imageMaxFileSizeErrorId;
         }
 
         this.core.hideButtons();
 
         if (uploadErrors) {
-            this.processUploadAddError(uploadErrorMessage);
+            errorNotificationCallback(errorNotificationId);
             return false;
         }
 
@@ -251,12 +245,13 @@
         reader.onload = function (e) {
             var domImage = that.getDOMImage();
             var target = e.target.result;
+            errorNotificationId = that.core.options.notificationIds.imageMinDimensionSizeErrorId;
 
             domImage.src = target;
 
             domImage.onload = function() {
                 if (this.width < minImageSize || this.height < minImageSize) {
-                    that.processUploadAddError(that.options.messages.minImageSizeError);
+                    errorNotificationCallback(errorNotificationId);
                     return false;
                 }
 
@@ -289,22 +284,6 @@
         };
 
         reader.readAsDataURL(data.files[0]);
-    };
-
-    /**
-     * Calls error handler while checking the image, added for upload dialog
-     * @param message
-     * @returns {boolean}
-     */
-    Images.prototype.processUploadAddError = function (message) {
-        var errorCustomCallback = this.options.errorCustomCallback;
-
-        if (errorCustomCallback && typeof errorCustomCallback === "function") {
-            errorCustomCallback(message);
-            return false;
-        }
-
-        console.log('Upload errors (' + message + ')');
     };
 
     /**
@@ -419,7 +398,8 @@
         var imgId = data.mediaId;
         var accountName = this.options.uploadData.account;
         var accountPrivateKey = this.options.uploadData.privateKey;
-        var uploadErrorMessage =this.options.messages.uploadError;
+        var errorNotificationCallback = this.core.options.errorNotificationCallback;
+        var errorNotificationId = this.core.options.notificationIds.imageUploadErrorId;
         var $place = this.$el.find('.medium-insert-images.medium-insert-active');
 
         // Hide editor's placeholder
@@ -468,13 +448,7 @@
                 $('.medium-insert-images[data-media-id="' + imgId + '"]').remove();
                 this.core.triggerInput();
 
-                console.error(err);
-
-                if (this.options.errorCustomCallback && typeof this.options.errorCustomCallback === "function") {
-                    this.options.errorCustomCallback(uploadErrorMessage);
-
-                    return false;
-                }
+                errorNotificationCallback(errorNotificationId);
             }
         })();
     };
@@ -495,10 +469,6 @@
             $image;
 
         if (this.core.options.enabled) {
-            if (this.$el.attr('data-medium-editor-is-disabled')) {
-                return;
-            }
-
             $image = $(e.target);
 
             if ($image.hasClass('medium-insert-image-active')) {
@@ -514,6 +484,10 @@
             $image.closest('.medium-insert-images').addClass('medium-insert-active');
 
             setTimeout(function () {
+                if (this.$el.attr('data-medium-editor-is-disabled')) {
+                    return;
+                }
+
                 that.addToolbar();
 
                 if (that.options.captions) {

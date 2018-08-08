@@ -26,10 +26,10 @@
                 helpers: null,
             },
             customEventsTypes: {},
-            maxBodySizeLimitData: {
-                value: null,
-                callback: function () {},
-            },
+            contentSizeMaxLength: null,
+            errorNotificationCallback: function () {},
+            successNotificationCallback: function () {},
+            notificationIds: {},
             addons: {
                 images: true, // boolean or object containing configuration
                 videos: true,
@@ -485,6 +485,7 @@
             this.$el.find('.medium-insert-buttons-addons').hide();
             this.$el.find('.medium-insert-buttons-show').removeClass('medium-insert-buttons-rotate');
             this.$el.removeClass('medium-insert-buttons-active');
+
             return;
         }
 
@@ -966,9 +967,9 @@
      * @param e
      */
     Core.prototype.checkEditorContentMaxSize = function (e) {
-        var maxBodySizeLimitData = this.options.maxBodySizeLimitData;
-        var limitLength = maxBodySizeLimitData.value;
-        var maxBodySizeCallback = maxBodySizeLimitData.callback;
+        var limitLength = this.options.contentSizeMaxLength;
+        var errorNotificationCallback = this.options.errorNotificationCallback;
+        var errorNotificationId = this.options.notificationIds.contentSizeMaxLengthErrorId;
         var contentCurrentLength = this.$el.attr('data-medium-editor-length');
 
         if (contentCurrentLength > limitLength) {
@@ -986,7 +987,7 @@
                 }
             }
 
-            maxBodySizeCallback();
+            errorNotificationCallback(errorNotificationId);
         } else {
             if (this.$el.attr('data-medium-editor-is-disabled')) {
                 this.$el.removeAttr('data-medium-editor-is-disabled');
