@@ -210,10 +210,10 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
                 helpers: null,
             },
             customEventsTypes: {},
-            maxBodySizeLimitData: {
-                value: null,
-                callback: function () {},
-            },
+            contentSizeMaxLength: null,
+            errorNotificationCallback: function () {},
+            successNotificationCallback: function () {},
+            notificationIds: {},
             addons: {
                 images: true, // boolean or object containing configuration
                 videos: true,
@@ -669,6 +669,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
             this.$el.find('.medium-insert-buttons-addons').hide();
             this.$el.find('.medium-insert-buttons-show').removeClass('medium-insert-buttons-rotate');
             this.$el.removeClass('medium-insert-buttons-active');
+
             return;
         }
 
@@ -1150,9 +1151,9 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
      * @param e
      */
     Core.prototype.checkEditorContentMaxSize = function (e) {
-        var maxBodySizeLimitData = this.options.maxBodySizeLimitData;
-        var limitLength = maxBodySizeLimitData.value;
-        var maxBodySizeCallback = maxBodySizeLimitData.callback;
+        var limitLength = this.options.contentSizeMaxLength;
+        var errorNotificationCallback = this.options.errorNotificationCallback;
+        var errorNotificationId = this.options.notificationIds.contentSizeMaxLengthErrorId;
         var contentCurrentLength = this.$el.attr('data-medium-editor-length');
 
         if (contentCurrentLength > limitLength) {
@@ -1170,7 +1171,7 @@ this["MediumInsert"]["Templates"]["src/js/templates/images-toolbar.hbs"] = Handl
                 }
             }
 
-            maxBodySizeCallback();
+            errorNotificationCallback(errorNotificationId);
         } else {
             if (this.$el.attr('data-medium-editor-is-disabled')) {
                 this.$el.removeAttr('data-medium-editor-is-disabled');
@@ -1782,15 +1783,15 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         var that = this,
             $embed;
         if (this.core.options.enabled) {
-            if (this.$el.attr('data-medium-editor-is-disabled')) {
-                return;
-            }
-
             $embed = $(e.target).hasClass('medium-insert-embeds') ? $(e.target) : $(e.target).closest('.medium-insert-embeds');
 
             $embed.addClass('medium-insert-embeds-selected');
 
             setTimeout(function () {
+                if (this.$el.attr('data-medium-editor-is-disabled')) {
+                    return;
+                }
+
                 that.addToolbar();
 
                 if (that.options.captions) {
@@ -2085,7 +2086,6 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             // uploadCompleted: function () {},
             uploadCustomCallback: function () {},
             uploadData: {},
-            // errorCustomCallback: function () {},
             generateMediaUniqueIdCallback: function () {}, // required
             getImageSuitableSizeCallback: function () {}, // required
             getUploadedImageCustomCallback: function () {}, // required
@@ -2144,12 +2144,6 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
                         that.core.triggerInput();
                     }
                 });
-            },
-            messages: {
-                acceptFileTypesError: 'This file is not in a supported format: ',
-                maxFileSizeError: 'This file is too big: ',
-                uploadError: 'An error occurred while uploading image',
-                minImageSizeError: 'Image is too small, min size is 200x200',
             },
         };
 
@@ -2293,26 +2287,27 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         var $place = this.$el.find('.medium-insert-active'),
             that = this,
             uploadErrors = false,
-            uploadErrorMessage = '',
             file = data.files[0],
             acceptFileTypes = this.options.acceptFileTypes,
             maxFileSize = this.options.maxFileSize,
             minImageSize = this.options.minImageSize,
             reader,
-            mediaId = this.options.generateMediaUniqueIdCallback();
+            mediaId = this.options.generateMediaUniqueIdCallback(),
+            errorNotificationCallback = this.core.options.errorNotificationCallback,
+            errorNotificationId;
 
         if (acceptFileTypes && !acceptFileTypes.test(file.type)) {
             uploadErrors = true;
-            uploadErrorMessage = this.options.messages.acceptFileTypesError;
+            errorNotificationId = this.core.options.notificationIds.imageUnsupportedFileTypesErrorId;
         } else if (maxFileSize && file.size > maxFileSize) {
             uploadErrors = true;
-            uploadErrorMessage = this.options.messages.maxFileSizeError;
+            errorNotificationId = this.core.options.notificationIds.imageMaxFileSizeErrorId;
         }
 
         this.core.hideButtons();
 
         if (uploadErrors) {
-            this.processUploadAddError(uploadErrorMessage);
+            errorNotificationCallback(errorNotificationId);
             return false;
         }
 
@@ -2321,12 +2316,13 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         reader.onload = function (e) {
             var domImage = that.getDOMImage();
             var target = e.target.result;
+            errorNotificationId = that.core.options.notificationIds.imageMinDimensionSizeErrorId;
 
             domImage.src = target;
 
             domImage.onload = function() {
                 if (this.width < minImageSize || this.height < minImageSize) {
-                    that.processUploadAddError(that.options.messages.minImageSizeError);
+                    errorNotificationCallback(errorNotificationId);
                     return false;
                 }
 
@@ -2359,22 +2355,6 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         };
 
         reader.readAsDataURL(data.files[0]);
-    };
-
-    /**
-     * Calls error handler while checking the image, added for upload dialog
-     * @param message
-     * @returns {boolean}
-     */
-    Images.prototype.processUploadAddError = function (message) {
-        var errorCustomCallback = this.options.errorCustomCallback;
-
-        if (errorCustomCallback && typeof errorCustomCallback === "function") {
-            errorCustomCallback(message);
-            return false;
-        }
-
-        console.log('Upload errors (' + message + ')');
     };
 
     /**
@@ -2489,7 +2469,8 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         var imgId = data.mediaId;
         var accountName = this.options.uploadData.account;
         var accountPrivateKey = this.options.uploadData.privateKey;
-        var uploadErrorMessage =this.options.messages.uploadError;
+        var errorNotificationCallback = this.core.options.errorNotificationCallback;
+        var errorNotificationId = this.core.options.notificationIds.imageUploadErrorId;
         var $place = this.$el.find('.medium-insert-images.medium-insert-active');
 
         // Hide editor's placeholder
@@ -2538,13 +2519,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
                 $('.medium-insert-images[data-media-id="' + imgId + '"]').remove();
                 this.core.triggerInput();
 
-                console.error(err);
-
-                if (this.options.errorCustomCallback && typeof this.options.errorCustomCallback === "function") {
-                    this.options.errorCustomCallback(uploadErrorMessage);
-
-                    return false;
-                }
+                errorNotificationCallback(errorNotificationId);
             }
         })();
     };
@@ -2565,10 +2540,6 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             $image;
 
         if (this.core.options.enabled) {
-            if (this.$el.attr('data-medium-editor-is-disabled')) {
-                return;
-            }
-
             $image = $(e.target);
 
             if ($image.hasClass('medium-insert-image-active')) {
@@ -2584,6 +2555,10 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             $image.closest('.medium-insert-images').addClass('medium-insert-active');
 
             setTimeout(function () {
+                if (this.$el.attr('data-medium-editor-is-disabled')) {
+                    return;
+                }
+
                 that.addToolbar();
 
                 if (that.options.captions) {
