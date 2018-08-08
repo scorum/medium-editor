@@ -484,7 +484,7 @@
             $image.closest('.medium-insert-images').addClass('medium-insert-active');
 
             setTimeout(function () {
-                if (this.$el.attr('data-medium-editor-is-disabled')) {
+                if (that.$el.attr('data-medium-editor-is-disabled')) {
                     return;
                 }
 

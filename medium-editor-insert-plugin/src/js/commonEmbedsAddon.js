@@ -493,7 +493,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             $embed.addClass('medium-insert-embeds-selected');
 
             setTimeout(function () {
-                if (this.$el.attr('data-medium-editor-is-disabled')) {
+                if (that.$el.attr('data-medium-editor-is-disabled')) {
                     return;
                 }
 
