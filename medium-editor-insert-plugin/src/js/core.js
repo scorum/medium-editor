@@ -207,6 +207,14 @@
                 }
             });*/
 
+            // Removes extra spaces from paragraphs
+            $data.find('p').each(function() {
+                var $this = $(this);
+                var newHtml = $this.html().replace(/&nbsp;/g, ' ').replace(/ {2,}/g, ' ').trim();
+
+                $this.html(newHtml);
+            });
+
             // Removes first empty paragraph
             var $firstParagraph = $data.find('p').first();
 
