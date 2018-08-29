@@ -269,7 +269,7 @@
                         }
                     }
 
-                    if ($place.is(':first-child')) { // add empty paragraph before media block wrapper if it's a first chils in content
+                    if ($place.is(':first-child')) { // add empty paragraph before media block wrapper if it's a first child in content
                         $place.before('<p><br></p>');
                     }
                 }
