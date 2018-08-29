@@ -47,6 +47,10 @@ this["MediumInsert"]["Templates"]["src/js/templates/core-empty-line.hbs"] = Hand
     return "<p><br></p>\n";
 },"useData":true});
 
+this["MediumInsert"]["Templates"]["src/js/templates/divider.hbs"] = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
+    return "<hr class=\"medium-insert-divider medium-insert-divider-added\" contenteditable=\"false\" />";
+},"useData":true});
+
 this["MediumInsert"]["Templates"]["src/js/templates/embeds-toolbar.hbs"] = Handlebars.template({"1":function(container,depth0,helpers,partials,data) {
     var stack1;
 

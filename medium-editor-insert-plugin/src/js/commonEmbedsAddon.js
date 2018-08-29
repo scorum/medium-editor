@@ -429,7 +429,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             }));
             $place.remove();
 
-            if ($('.medium-insert-embeds-added').is(':first-child')) { // add empty paragraph before media block wrapper if it's a first chils in content
+            if ($('.medium-insert-embeds-added').is(':first-child')) { // add empty paragraph before media block wrapper if it's a first child in content
                 $('.medium-insert-embeds-added').before('<p><br></p>');
             }
 

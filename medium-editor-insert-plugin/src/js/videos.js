@@ -15,11 +15,11 @@
      * Videos object
      * @inheritDoc
      */
-    function Videos (el, options) {
+    function Videos(el, options) {
         this.el = el;
         this.$el = $(el);
         this.templates = window.MediumInsert.Templates;
-        this.core = this.$el.data('plugin_'+ pluginName);
+        this.core = this.$el.data('plugin_' + pluginName);
 
         this.options = $.extend(true, {}, options);
 
@@ -33,7 +33,6 @@
      *
      * @return {void}
      */
-
     Videos.prototype.init = function () {
         this.events();
     };

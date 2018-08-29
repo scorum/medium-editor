@@ -33,7 +33,8 @@
             addons: {
                 images: true, // boolean or object containing configuration
                 videos: true,
-                embeds: true
+                embeds: true,
+                dividers: true,
             }
         };
 
@@ -207,8 +208,8 @@
                 }
             });*/
 
-            // Removes extra spaces from paragraphs
-            $data.find('p').each(function() {
+            // Removes extra spaces in paragraphs
+            $data.find('p').each(function () {
                 var $this = $(this);
                 var newHtml = $this.html().replace(/&nbsp;/g, ' ').replace(/ {2,}/g, ' ').trim();
 
