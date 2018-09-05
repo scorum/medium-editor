@@ -178,6 +178,8 @@
             $data.find('.medium-insert-images').find('figcaption, figure').removeAttr('contenteditable');
             $data.find('.medium-insert-images-progress').remove();
             $data.find('.medium-insert-image-active').removeClass('medium-insert-image-active');
+            $data.find('.medium-insert-images-progress').remove();
+            $data.find('.medium-insert-files-list').remove();
 
             data[key].value = $data.html();
         });
@@ -192,27 +194,34 @@
      */
 
     Images.prototype.add = function () {
-        var that = this;
-        var $file = $('<input/>')
-            .attr('type', 'file')
-            .attr('name', 'upload-new-image')
-            .attr('accept', 'image/*')
-            .attr('id', 'upload-new-image');
+        var that = this,
+            mediaId = this.options.generateMediaUniqueIdCallback(),
+            fileIdAttr = 'upload-new-image-' + mediaId,
+            $file = $('<input/>')
+                .attr('type', 'file')
+                .attr('name', 'upload-new-image')
+                .attr('accept', 'image/*')
+                .attr('id', fileIdAttr)
+                .addClass('medium-insert-file-item')
+                .css({ 'display': 'none' });
 
-        var $fileNew = $file;
+        $file.appendTo('.medium-insert-files-list');
 
-        $fileNew.on('change', function() {
-            that.uploadAdd(this);
+        $(document).on('change', '#' + fileIdAttr, function() {
+            that.uploadAdd(this, mediaId);
         });
 
-        $fileNew.click();
+        $(document).find('#' + fileIdAttr).click();
     };
 
     /**
-     * @param {object} data
+     *
+     * @param data
+     * @param mediaId
+     * @returns {boolean}
      */
 
-    Images.prototype.uploadAdd = function (data) {
+    Images.prototype.uploadAdd = function (data, mediaId) {
         var $place = this.$el.find('.medium-insert-active'),
             that = this,
             uploadErrors = false,
@@ -221,7 +230,6 @@
             maxFileSize = this.options.maxFileSize,
             minImageSize = this.options.minImageSize,
             reader,
-            mediaId = this.options.generateMediaUniqueIdCallback(),
             errorNotificationCallback = this.core.options.errorNotificationCallback,
             errorNotificationId;
 
@@ -257,8 +265,8 @@
 
                 // Replace paragraph with div, because figure elements can't be inside paragraph
                 if ($place.is('p')) {
-                    $place.replaceWith('<div class="medium-insert-active">' + $place.html() + '</div>');
-                    $place = that.$el.find('.medium-insert-active');
+                    $place.replaceWith('<div class="medium-insert-active medium-insert-images" data-media-id="' + mediaId + '">' + $place.html() + '</div>');
+                    $place = that.$el.find('.medium-insert-images[data-media-id="' + mediaId + '"]');
 
                     if ($place.next().is('p')) {
                         that.core.moveCaret($place.next());
@@ -275,9 +283,6 @@
                 }
 
                 data.mediaId = mediaId;
-
-                $place.addClass('medium-insert-images');
-                $place.attr('data-media-id', mediaId);
 
                 $.proxy(that, 'showImage', target, data)();
             };
@@ -337,6 +342,80 @@
     };*/
 
     /**
+     * Add uploaded / preview image to DOM
+     *
+     * @param {string} img
+     * @param {object} data
+     * @returns {void}
+     */
+
+    Images.prototype.showImage = function (img, data) {
+        var uploadMedia = this.options.uploadCustomCallback;
+        var getMedia = this.options.getUploadedImageCustomCallback;
+        var base64Img = img.split(',')[1];
+        var imgType = data.files[0].type;
+        var imgId = data.mediaId;
+        var accountName = this.options.uploadData.account;
+        var accountPrivateKey = this.options.uploadData.privateKey;
+        var errorNotificationCallback = this.core.options.errorNotificationCallback;
+        var errorNotificationId = this.core.options.notificationIds.imageUploadErrorId;
+        var currentElSelectorStr = '.medium-insert-images[data-media-id="' + imgId + '"]';
+        var $place = this.$el.find(currentElSelectorStr);
+
+        // Hide editor's placeholder
+        $place.click();
+
+        var $mediaEl = $(this.templates['src/js/templates/images-image.hbs']({
+            img: img,
+            progress: true
+        }));
+
+        $mediaEl.appendTo($place);
+
+        this.core.triggerInput();
+
+        $place.find('br').remove();
+
+        // Blur shouldn't be done in Safari because of "selection getRangeAt(0)" bug
+        if (!(/Version\/([0-9\._]+).*Safari/.test(navigator.userAgent))) {
+            $('.medium-editor-insert-plugin').blur();
+        }
+
+        $(currentElSelectorStr).find('img')
+            .next('.medium-insert-images-progress').focus().click();
+
+        (async () => {
+            try {
+                await this.core._delayAsync();
+
+                var uploadResponse = await uploadMedia(
+                    accountPrivateKey,
+                    accountName,
+                    imgId,
+                    base64Img,
+                    imgType,
+                );
+
+                const uploadedImgData = await getMedia(accountName, imgId);
+
+                this.uploadDone(uploadedImgData, imgId);
+
+                if (this.options.uploadCompleted) {
+                    this.options.uploadCompleted(data);
+                }
+
+            } catch (err) {
+                $(currentElSelectorStr).remove();
+                $(document).find('#upload-new-image-' + imgId).remove();
+
+                this.core.triggerInput();
+
+                errorNotificationCallback(errorNotificationId);
+            }
+        })();
+    };
+
+    /**
      *
      * @param {string} uploadedImgData
      * @param {string} imgId
@@ -368,6 +447,7 @@
             });
 
             $imgEl.next('.medium-insert-images-progress').remove();
+            $(document).find('#upload-new-image-' + imgId).remove();
 
             this.core.triggerInput();
 
@@ -380,77 +460,6 @@
 
         this.core.clean();
         //this.sorting();
-    };
-
-    /**
-     * Add uploaded / preview image to DOM
-     *
-     * @param {string} img
-     * @param {object} data
-     * @returns {void}
-     */
-
-    Images.prototype.showImage = function (img, data) {
-        var uploadMedia = this.options.uploadCustomCallback;
-        var getMedia = this.options.getUploadedImageCustomCallback;
-        var base64Img = img.split(',')[1];
-        var imgType = data.files[0].type;
-        var imgId = data.mediaId;
-        var accountName = this.options.uploadData.account;
-        var accountPrivateKey = this.options.uploadData.privateKey;
-        var errorNotificationCallback = this.core.options.errorNotificationCallback;
-        var errorNotificationId = this.core.options.notificationIds.imageUploadErrorId;
-        var $place = this.$el.find('.medium-insert-images.medium-insert-active');
-
-        // Hide editor's placeholder
-        $place.click();
-
-        var $mediaEl = $(this.templates['src/js/templates/images-image.hbs']({
-            img: img,
-            progress: true
-        }));
-
-        $mediaEl.appendTo($place);
-
-        this.core.triggerInput();
-
-        $place.find('br').remove();
-
-        // Blur shouldn't be done in Safari because of "selection getRangeAt(0)" bug
-        if (!(/Version\/([0-9\._]+).*Safari/.test(navigator.userAgent))) {
-            $('.medium-editor-insert-plugin').blur();
-        }
-
-        $('.medium-insert-images[data-media-id="' + imgId + '"]').find('img')
-            .next('.medium-insert-images-progress').focus().click();
-
-        (async () => {
-            try {
-                await this.core._delayAsync();
-
-                var uploadResponse = await uploadMedia(
-                    accountPrivateKey,
-                    accountName,
-                    imgId,
-                    base64Img,
-                    imgType,
-                );
-
-                const uploadedImgData = await getMedia(accountName, imgId);
-
-                this.uploadDone(uploadedImgData, imgId);
-
-                if (this.options.uploadCompleted) {
-                    this.options.uploadCompleted(data);
-                }
-
-            } catch (err) {
-                $('.medium-insert-images[data-media-id="' + imgId + '"]').remove();
-                this.core.triggerInput();
-
-                errorNotificationCallback(errorNotificationId);
-            }
-        })();
     };
 
     Images.prototype.getDOMImage = function () {
