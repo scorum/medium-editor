@@ -410,7 +410,7 @@
 
                 this.core.triggerInput();
 
-                errorNotificationCallback(errorNotificationId);
+                errorNotificationCallback(null, err);
             }
         })();
     };
