@@ -2617,7 +2617,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
 
                 this.core.triggerInput();
 
-                errorNotificationCallback(errorNotificationId);
+                errorNotificationCallback(null, err);
             }
         })();
     };
