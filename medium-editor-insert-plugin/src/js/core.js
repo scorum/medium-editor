@@ -208,20 +208,18 @@
                 }
             });*/
 
-            // Removes extra spaces in paragraphs
+            // Removes extra spaces in paragraphs + removes empty paragraphs
             $data.find('p').each(function () {
                 var $this = $(this);
-                var newHtml = $this.html().replace(/&nbsp;/g, ' ').replace(/ {2,}/g, ' ').trim();
 
-                $this.html(newHtml);
+                if ($this.text().trim() === '') {
+                    $this.remove();
+                } else {
+                    var newHtml = $this.html().replace(/&nbsp;/g, ' ').replace(/ {2,}/g, ' ').trim();
+                    $this.html(newHtml);
+                }
+
             });
-
-            // Removes first empty paragraph
-            var $firstParagraph = $data.find('p').first();
-
-            if ($firstParagraph.length !== 0 && $firstParagraph.prev().length === 0 && $firstParagraph.text().trim() === '') {
-                $firstParagraph.remove();
-            }
 
             data[key].value = $data.html();
         });
