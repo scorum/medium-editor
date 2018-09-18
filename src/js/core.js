@@ -52,10 +52,11 @@
     }
 
     function handleBlockDeleteKeydowns(event) {
-        var p, node = MediumEditor.selection.getSelectionStart(this.options.ownerDocument),
+        var node = MediumEditor.selection.getSelectionStart(this.options.ownerDocument),
             tagName = node.nodeName.toLowerCase(),
             isEmpty = /^(\s+|<br.*\/?>)?$/i,
-            isHeader = /h\d/i;
+            isHeader = /h\d/i,
+            p, parent, next, header;
 
         if (MediumEditor.util.isKey(event, [MediumEditor.util.keyCode.BACKSPACE, MediumEditor.util.keyCode.ENTER]) &&
             // has a preceeding sibling
@@ -183,6 +184,45 @@
                 node.parentElement.insertBefore(p, node.nextSibling);
 
                 // move the cursor into the new paragraph
+                MediumEditor.selection.moveCursor(this.options.ownerDocument, p);
+            }
+        } else if (MediumEditor.util.isKey(event, MediumEditor.util.keyCode.ENTER) && // ENTER button is pressed
+            // Mozilla FF
+            MediumEditor.util.isFF &&
+            // at the very end of the block (header)
+            MediumEditor.selection.getCaretOffsets(node).right === 0)
+        {
+            var h2 = node.closest('h2');
+            var h3 = node.closest('h3');
+
+            // in a header
+            if (isHeader.test(tagName)) {
+                header = node;
+            } else if (h2) {
+                header = h2;
+            } else if (h3) {
+                header = h3;
+            }
+
+            if (header) {
+                // Cancels standard behavior
+                event.preventDefault();
+
+                // Creates `p` element
+                p = this.options.ownerDocument.createElement('p');
+                p.innerHTML = '<br>';
+
+                parent = header.parentNode;
+                next = header.nextSibling;
+
+                // Inserts it (`p`) after header
+                if (next) {
+                    parent.insertBefore(p, next);
+                } else {
+                    parent.appendChild(p);
+                }
+
+                // Moves the cursor into the new paragraph
                 MediumEditor.selection.moveCursor(this.options.ownerDocument, p);
             }
         }
