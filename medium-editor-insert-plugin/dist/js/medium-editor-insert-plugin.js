@@ -2346,7 +2346,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             .on('click', '.medium-insert-images-toolbar2 .medium-editor-action', $.proxy(this, 'toolbar2Action'));
 
         this.$el
-            .on('click', '.medium-insert-images img', $.proxy(this, 'selectImage'));
+            .on('click', '.medium-insert-images img, .medium-insert-images .medium-insert-images-progress', $.proxy(this, 'selectImage'));
 
         $(window)
             .on('resize', $.proxy(this, 'autoRepositionToolbars'));
@@ -2383,7 +2383,6 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             $data.find('.medium-insert-images').find('figcaption, figure').removeAttr('contenteditable');
             $data.find('.medium-insert-images-progress').remove();
             $data.find('.medium-insert-image-active').removeClass('medium-insert-image-active');
-            $data.find('.medium-insert-images-progress').remove();
             $data.find('.medium-insert-files-list').remove();
 
             data[key].value = $data.html();
@@ -2586,8 +2585,8 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             $('.medium-editor-insert-plugin').blur();
         }
 
-        $(currentElSelectorStr).find('img')
-            .next('.medium-insert-images-progress').focus().click();
+        $(currentElSelectorStr).find('img').next('.medium-insert-images-progress').focus().click();
+        $(currentElSelectorStr).find('img').removeClass('medium-insert-image-active');
 
         (async () => {
             try {
@@ -2610,12 +2609,13 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
                 }
 
             } catch (err) {
-                $(currentElSelectorStr).remove();
+                if (this.$el.find(currentElSelectorStr).length !== 0) {
+                    $(currentElSelectorStr).remove();
+                    errorNotificationCallback(null, err);
+                }
+
                 $(document).find('#upload-new-image-' + imgId).remove();
-
                 this.core.triggerInput();
-
-                errorNotificationCallback(null, err);
             }
         })();
     };
@@ -2624,7 +2624,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
      *
      * @param {string} uploadedImgData
      * @param {string} imgId
-     * @return {void}
+     * @return {boolean}
      */
 
     Images.prototype.uploadDone = function (uploadedImgData, imgId) {
@@ -2633,6 +2633,10 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
         var $imgWrapper = $('.medium-insert-images[data-media-id="' + imgId + '"]');
         var $imgEl = $imgWrapper.find('img');
         var imageDefaultSize = this.options.imageDefaultSize;
+
+        if ($imgWrapper.length === 0) {
+            return false;
+        }
 
         var imgSuitableSize = this.options.getImageSuitableSizeCallback(originalWidth, imageDefaultSize, this.imageAvailableSizesList)
         if (imgSuitableSize) {
@@ -2674,16 +2678,26 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
     /**
      * Select clicked image
      *
-     * @param {Event} e
-     * @returns {void}
+     * @param e
+     * @returns {boolean}
      */
 
     Images.prototype.selectImage = function (e) {
         var that = this,
-            $image;
+            $currentElement,
+            $image,
+            $imageWrapper;
 
         if (this.core.options.enabled) {
-            $image = $(e.target);
+            $currentElement = $(e.target);
+            $imageWrapper = $currentElement.closest('.medium-insert-images');
+
+            // Gets image element
+            if ($currentElement.hasClass('medium-insert-images-progress')) {
+                $image = $imageWrapper.find('img');
+            } else {
+                $image = $currentElement;
+            }
 
             if ($image.hasClass('medium-insert-image-active')) {
                 return false;
@@ -2695,10 +2709,13 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             this.$el.blur();
 
             $image.addClass('medium-insert-image-active');
-            $image.closest('.medium-insert-images').addClass('medium-insert-active');
+            $imageWrapper.addClass('medium-insert-active');
 
             setTimeout(function () {
-                if (that.$el.attr('data-medium-editor-is-disabled')) {
+                if (
+                    that.$el.attr('data-medium-editor-is-disabled')
+                    || $imageWrapper.find('.medium-insert-images-progress').length !== 0
+                ) {
                     return;
                 }
 
@@ -2714,15 +2731,18 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
     /**
      * Unselect selected image
      *
-     * @param {Event} e
-     * @returns {void}
+     * @param e
+     * @returns {boolean}
      */
 
     Images.prototype.unselectImage = function (e) {
         var $el = $(e.target),
             $image = this.$el.find('.medium-insert-image-active');
 
-        if ($el.closest('.medium-editor-action').length !== 0) {
+        if (
+            $el.closest('.medium-editor-action').length !== 0
+            || $el.hasClass('medium-insert-images-progress')
+        ) {
             return false;
         }
 
@@ -2730,6 +2750,7 @@ function getCommonEmbedsAddon(pluginName, addonName, $, window, document) {
             $image.not($el).removeClass('medium-insert-image-active');
             $('.medium-insert-images-toolbar, .medium-insert-images-toolbar2').remove();
             this.core.removeCaptions($el);
+
             return;
         }
 
