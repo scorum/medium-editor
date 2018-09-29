@@ -1,4 +1,4 @@
-;(function ($, window, document, undefined) {
+;(function ($, window, document, Util, Selection, undefined) {
 
     'use strict';
 
@@ -49,6 +49,10 @@
      * @return {void}
      */
     Dividers.prototype.events = function () {
+        var that = this;
+
+        this.$el.on('keydown', $.proxy(this, 'checkDividerWhileLineRemoving'));
+
         $(document).on('click', '.medium-insert-divider', $.proxy(this, 'clickDivider'));
     };
 
@@ -111,6 +115,44 @@
         }
     };
 
+    /**
+     * Handles line deleting process, checking the neighboring dividers
+     * Mozilla Firefox FIX
+     * @param e
+     */
+    Dividers.prototype.checkDividerWhileLineRemoving = function (e) {
+        if (Util.isFF && Util.isKey(e, Util.keyCode.BACKSPACE)) { // Mozilla FF and BACKSPACE key is pressed
+            var $currentEl,
+                $prevEl,
+                currentNode = Selection.getSelectionStart(document);
+
+            if (!Util.isBlockContainer(currentNode)) {
+                currentNode = Util.getClosestBlockContainer(currentNode);
+            }
+
+            $currentEl = $(currentNode);
+
+            // Mozilla FF contains paragraphs in blockquotes elements.
+            // Thats's why closest blockquote element should be taken
+            if ($currentEl.is('p') && $currentEl.closest('blockquote').length !== 0) {
+                $currentEl = $currentEl.closest('blockquote');
+            }
+
+            $prevEl = $currentEl.prev();
+
+            if (
+                Selection.getCaretOffsets(currentNode).left === 0
+                && $currentEl.length !== 0
+                && $prevEl.length !== 0
+                && $prevEl.hasClass('medium-insert-divider')
+            ) {
+                e.preventDefault();
+                e.stopPropagation();
+                $prevEl.remove();
+            }
+        }
+    };
+
     /** Addon initialization */
     $.fn[pluginName + addonName] = function (options) {
         return this.each(function () {
@@ -120,4 +162,4 @@
         });
     };
 
-})(jQuery, window, document);
+})(jQuery, window, document, MediumEditor.util, MediumEditor.selection);
