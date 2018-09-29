@@ -196,20 +196,8 @@
                 $this.html(html);
             });
 
-            /*$data.find('p').each(function() {
-                var $this = $(this);
-                var $prevEl = $this.prev();
-                var $nextEl = $this.next('p');
-
-                if ($this.text().length === 0 &&
-                    ($prevEl.length === 0 || ($nextEl.length !== 0 && $nextEl.text() === '')))
-                {
-                    $this.remove();
-                }
-            });*/
-
-            // Removes extra spaces in paragraphs + removes empty paragraphs
-            $data.find('p').each(function () {
+            // Removes extra spaces in elements + removes empty ones
+            $data.find('p, h2, h3, blockquote, figcaption').each(function () {
                 var $this = $(this);
 
                 if ($this.text().trim() === '') {
@@ -218,7 +206,6 @@
                     var newHtml = $this.html().replace(/&nbsp;/g, ' ').replace(/ {2,}/g, ' ').trim();
                     $this.html(newHtml);
                 }
-
             });
 
             data[key].value = $data.html();
